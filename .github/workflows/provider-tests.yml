@@ -1,0 +1,30 @@
+name: Provider Tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  provider-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - provider: ollama
+          - provider: lmstudio
+          - provider: llamacpp
+          - provider: vllm
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+
+      - name: Run ${{ matrix.provider }} suite
+        run: bash tests/docker/run-providers-suite.sh "${{ matrix.provider }}"
