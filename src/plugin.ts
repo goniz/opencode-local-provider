@@ -21,7 +21,7 @@ function validID(value: string) {
   return /^[a-z0-9][a-z0-9-_]*$/.test(value)
 }
 
-async function models(provider: Provider, ctx: ProviderHookContext) {
+async function probeModels(provider: Provider, ctx: ProviderHookContext) {
   const list = getProviderTargets(provider)
   if (!Object.keys(list).length) return {}
 
@@ -131,7 +131,7 @@ export const LocalProviderPlugin: Plugin = async (ctx) => {
     },
     provider: {
       id: LOCAL_PROVIDER_ID,
-      models,
+      models: probeModels,
     },
   }
 }
