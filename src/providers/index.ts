@@ -6,11 +6,11 @@ import ollama from "./ollama"
 import type { ProviderMap } from "./shared"
 import vllm from "./vllm"
 
-export const order: LocalProviderKind[] = ["ollama", "lmstudio", "llamacpp", "vllm"]
-
-export const providers: ProviderMap = {
+export const supportedProviders: ProviderMap = {
   ollama,
   lmstudio,
   llamacpp,
   vllm,
 }
+
+export const supportedProviderKinds = Object.keys(supportedProviders) as LocalProviderKind[]
