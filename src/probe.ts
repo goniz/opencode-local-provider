@@ -1,13 +1,13 @@
 import type { LocalProviderKind } from "./types"
 
-import { order, providers } from "./providers"
+import { supportedProviders, supportedProviderKinds } from "./providers"
 import { rootURL } from "./url"
 
 export async function detect(url: string, key?: string): Promise<LocalProviderKind | null> {
   const root = rootURL(url)
 
-  for (const kind of order) {
-    if (await providers[kind].detect(root, key)) return kind
+  for (const kind of supportedProviderKinds) {
+    if (await supportedProviders[kind].detect(root, key)) return kind
   }
 
   return null
@@ -19,7 +19,7 @@ export async function probe(url: string, key?: string, kind?: LocalProviderKind)
   if (kind) {
     return {
       kind,
-      models: await providers[kind].probe(root, key),
+      models: await supportedProviders[kind].probe(root, key),
     }
   }
 
@@ -28,6 +28,6 @@ export async function probe(url: string, key?: string, kind?: LocalProviderKind)
 
   return {
     kind: detected,
-    models: await providers[detected].probe(root, key),
+    models: await supportedProviders[detected].probe(root, key),
   }
 }
