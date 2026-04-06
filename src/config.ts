@@ -6,26 +6,37 @@ import { LEGACY_TARGET_ID, LOCAL_PROVIDER_ID } from "./constants"
 import { KINDS, type LocalTarget } from "./types"
 import { baseURL } from "./url"
 
-function sdk(url: URL, input: PluginInput["client"]) {
-  const cfg = (((input as unknown) as { _client?: { getConfig?: () => { fetch?: typeof fetch; headers?: Record<string, string> } } })._client?.getConfig?.() ?? {}) as {
-    fetch?: typeof fetch
-    headers?: Record<string, string>
-  }
+type HarnessClientConfig = {
+  fetch?: typeof fetch
+  headers?: Record<string, string>
+}
+
+function getV1OpencodeClientConfig(input: PluginInput["client"]): HarnessClientConfig {
+  return (((input as unknown) as {
+    _client?: { getConfig?: () => HarnessClientConfig }
+  })._client?.getConfig?.() ?? {}) as HarnessClientConfig
+}
+
+// The plugin harness already gives us a configured v1 client. Reuse that
+// fetch implementation and headers when creating the v2 client so config
+// requests keep the same transport/auth behavior.
+function createV2OpencodeClient(url: URL, input: PluginInput["client"]) {
+  const v1ClientConfig = getV1OpencodeClientConfig(input)
 
   return createOpencodeClient({
     baseUrl: url.toString(),
-    fetch: cfg.fetch,
-    headers: cfg.headers,
+    fetch: v1ClientConfig.fetch,
+    headers: v1ClientConfig.headers,
     throwOnError: true,
   })
 }
 
-export function authKey(auth?: { type: string; key?: string }) {
+export function getAuthApiKey(auth?: { type: string; key?: string }) {
   if (!auth || auth.type !== "api") return ""
   return auth.key ?? ""
 }
 
-function target(item: unknown) {
+function parseTargetConfig(item: unknown) {
   if (typeof item === "string" && item) return { url: baseURL(item) }
   if (item && typeof item === "object") {
     const url = "url" in item ? item.url : undefined
@@ -39,13 +50,13 @@ function target(item: unknown) {
   }
 }
 
-export function targets(provider?: Pick<Provider, "options">) {
+export function getProviderTargets(provider?: Pick<Provider, "options">) {
   const raw = provider?.options?.targets
   if (raw && typeof raw === "object" && !Array.isArray(raw)) {
     const next = Object.fromEntries(
       Object.entries(raw)
         .map(([id, item]) => {
-          const val = target(item)
+          const val = parseTargetConfig(item)
           if (!val) return
           return [id, val] as const
         })
@@ -66,22 +77,22 @@ export function targets(provider?: Pick<Provider, "options">) {
   return {}
 }
 
-export function key(provider?: Pick<Provider, "options">, auth?: { type: string; key?: string }) {
+export function getProviderApiKey(provider?: Pick<Provider, "options">, auth?: { type: string; key?: string }) {
   const val = provider?.options?.apiKey
   if (typeof val === "string" && val) return val
-  return authKey(auth)
+  return getAuthApiKey(auth)
 }
 
-export async function current(url: URL, input: PluginInput["client"]) {
-  const cfg = await sdk(url, input).global.config.get()
+export async function getCurrentProviderConfig(url: URL, input: PluginInput["client"]) {
+  const cfg = await createV2OpencodeClient(url, input).global.config.get()
   const provider = cfg.data?.provider?.[LOCAL_PROVIDER_ID]
   return {
-    targets: targets(provider as Pick<Provider, "options"> | undefined),
+    targets: getProviderTargets(provider as Pick<Provider, "options"> | undefined),
     key: typeof provider?.options?.apiKey === "string" ? provider.options.apiKey : "",
   }
 }
 
-export async function save(
+export async function saveProviderTarget(
   server: URL,
   input: PluginInput["client"],
   id: string,
@@ -89,7 +100,7 @@ export async function save(
   kind?: LocalTarget["kind"],
   key?: string,
 ) {
-  const cur = await current(server, input)
+  const cur = await getCurrentProviderConfig(server, input)
   const options: Record<string, unknown> = {
     targets: {
       ...cur.targets,
@@ -99,10 +110,10 @@ export async function save(
       },
     },
   }
-
+  
   if (key !== undefined) options.apiKey = key
 
-  await sdk(server, input).global.config.update({
+  await createV2OpencodeClient(server, input).global.config.update({
     config: {
       provider: {
         [LOCAL_PROVIDER_ID]: {
