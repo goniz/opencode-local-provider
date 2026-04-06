@@ -7,29 +7,25 @@ import {
   LOCAL_PLUGIN_SERVICE,
   OPENAI_COMPATIBLE_NPM,
 } from "./constants"
-import { current, key, save, targets } from "./config"
+import {
+  getCurrentProviderConfig,
+  getProviderApiKey,
+  getProviderTargets,
+  saveProviderTarget,
+} from "./config"
 import { build } from "./models"
-import { probe } from "./probe"
+import { detect, probe } from "./probe"
 import { trimURL } from "./url"
-
-function valid(value: string) {
-  try {
-    new URL(value)
-    return true
-  } catch {
-    return false
-  }
-}
 
 function validID(value: string) {
   return /^[a-z0-9][a-z0-9-_]*$/.test(value)
 }
 
 async function models(provider: Provider, ctx: ProviderHookContext) {
-  const list = targets(provider)
+  const list = getProviderTargets(provider)
   if (!Object.keys(list).length) return {}
 
-  const auth = key(provider, ctx.auth)
+  const auth = getProviderApiKey(provider, ctx.auth)
 
   const all = await Promise.all(
     Object.entries(list).map(async ([id, item]) => {
@@ -58,7 +54,7 @@ export const LocalProviderPlugin: Plugin = async (ctx) => {
     config: async (cfg) => {
       cfg.provider ??= {}
       const provider = cfg.provider[LOCAL_PROVIDER_ID] ?? {}
-      const list = targets(provider as Provider)
+      const list = getProviderTargets(provider as Provider)
       const options = {
         ...provider.options,
         targets: list,
@@ -94,8 +90,7 @@ export const LocalProviderPlugin: Plugin = async (ctx) => {
               message: "Enter your local provider URL",
               placeholder: "http://localhost:11434",
               validate(value) {
-                if (!value) return "URL is required"
-                if (!valid(value)) return "Please enter a valid URL (e.g. http://localhost:11434)"
+                if (!trimURL(value ?? "")) return "URL is required"
               },
             },
             {
@@ -108,17 +103,19 @@ export const LocalProviderPlugin: Plugin = async (ctx) => {
           async authorize(input = {}) {
             const id = input.target?.trim() ?? ""
             const raw = trimURL(input.baseURL ?? "")
-            if (!id || !validID(id) || !raw || !valid(raw)) return { type: "failed" as const }
+            if (!id || !validID(id) || !raw) return { type: "failed" as const }
 
-            const cur = await current(ctx.serverUrl, ctx.client)
+            const cur = await getCurrentProviderConfig(ctx.serverUrl, ctx.client)
             const prev = cur.key
             const next = input.apiKey?.trim()
             const key = next === "none" ? "" : next || prev
             const saveKey = next === "none" ? "" : next || undefined
 
             try {
-              const found = await probe(raw, key)
-              await save(ctx.serverUrl, ctx.client, id, raw, found.kind, saveKey)
+              const kind = await detect(raw, key)
+              if (!kind) return { type: "failed" as const }
+              await probe(raw, key, kind)
+              await saveProviderTarget(ctx.serverUrl, ctx.client, id, raw, kind, saveKey)
             } catch {
               return { type: "failed" as const }
             }
