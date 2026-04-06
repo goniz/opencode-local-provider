@@ -19,6 +19,10 @@ Instead of creating one provider per server, this plugin keeps one `local` provi
 - Supports optional shared API key auth
 - Uses OpenCode global config, not project-local config
 
+## Example
+
+https://github.com/user-attachments/assets/8693fd22-c311-4cb4-913b-93d5a531b23c
+
 ## Install
 
 ```bash
