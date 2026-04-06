@@ -1,15 +1,36 @@
 {
   "name": "opencode-local-provider",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "type": "module",
+  "license": "MIT",
   "description": "OpenCode plugin that adds a 'local' provider with auto-detection for Ollama, LMStudio, llama.cpp, and vLLM",
+  "module": "./dist/index.js",
   "main": "./dist/index.js",
   "exports": {
-    ".": "./src/index.ts",
-    "./server": "./src/index.ts"
+    ".": "./dist/index.js",
+    "./server": "./dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "opencode",
+    "plugin",
+    "llm",
+    "ollama",
+    "lmstudio",
+    "llama.cpp",
+    "vllm",
+    "local"
+  ],
   "scripts": {
-    "build": "bun build src/index.ts --outdir=dist --target=bun --format=esm --packages=external"
+    "build": "bun build src/index.ts --outdir=dist --target=bun --format=esm --packages=external",
+    "typecheck": "bun tsc --noEmit",
+    "prepublishOnly": "bun run build"
   },
   "devDependencies": {
     "@types/bun": "latest"
