@@ -6,7 +6,7 @@ COMPOSE_FILE="$ROOT/tests/docker/compose.providers.yml"
 export COMPOSE_PROJECT_NAME="provider-tests"
 
 SUITE="${1:-all}"
-SERVICES=(ollama lmstudio llamacpp vllm)
+SERVICES=(ollama lmstudio llamacpp vllm exo)
 
 is_valid_suite() {
   local candidate="$1"
@@ -78,6 +78,7 @@ OLLAMA_URL="$(service_url ollama 11434)"
 LMSTUDIO_URL="$(service_url lmstudio 1234)"
 LLAMACPP_URL="$(service_url llamacpp 8080)"
 VLLM_URL="$(service_url vllm 8000)"
+EXO_URL="$(service_url exo 52415)"
 
 REAL_PROVIDER_SUITE=1 \
 PROVIDER_SUITE="$([[ "$SUITE" == "all" ]] && printf '' || printf '%s' "$SUITE")" \
@@ -85,4 +86,5 @@ OLLAMA_URL="$OLLAMA_URL" \
 LMSTUDIO_URL="$LMSTUDIO_URL" \
 LLAMACPP_URL="$LLAMACPP_URL" \
 VLLM_URL="$VLLM_URL" \
+EXO_URL="$EXO_URL" \
   bun test "./tests/providers.real.test.ts"
