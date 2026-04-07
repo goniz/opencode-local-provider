@@ -27,6 +27,11 @@ const suites = [
     url: process.env.VLLM_URL ?? "http://vllm:8000",
     modelID: process.env.VLLM_MODEL,
   },
+  {
+    kind: "exo",
+    url: process.env.EXO_URL ?? "http://exo:52415",
+    modelID: process.env.EXO_MODEL,
+  },
 ] as const
 
 const activeSuites = selectedKind

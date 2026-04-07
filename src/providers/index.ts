@@ -1,5 +1,6 @@
 import type { LocalProviderKind } from "../types"
 
+import exo from "./exo"
 import llamacpp from "./llamacpp"
 import lmstudio from "./lmstudio"
 import ollama from "./ollama"
@@ -11,6 +12,7 @@ export const supportedProviders: ProviderMap = {
   lmstudio,
   llamacpp,
   vllm,
+  exo,
 }
 
 export const supportedProviderKinds = Object.keys(supportedProviders) as LocalProviderKind[]
