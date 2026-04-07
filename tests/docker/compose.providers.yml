@@ -36,7 +36,7 @@ services:
     image: ghcr.io/ggml-org/llama.cpp:server
     environment:
       LLAMACPP_MODEL_REPO: LiquidAI/LFM2.5-350M-GGUF:Q8_0
-      LLAMACPP_CONTEXT: 128
+      LLAMACPP_CONTEXT: 256
     volumes:
       - ./llamacpp-entrypoint.sh:/entrypoint.sh:ro
     entrypoint: ["bash", "/entrypoint.sh"]

@@ -23,7 +23,7 @@ const suites = [
     kind: "llamacpp",
     url: process.env.LLAMACPP_URL ?? "http://llamacpp:8080",
     modelID: process.env.LLAMACPP_MODEL_ID,
-    expectedContext: 128,
+    expectedContext: 256,
   },
   {
     kind: "vllm",
