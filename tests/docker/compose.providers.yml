@@ -74,7 +74,7 @@ services:
       context: .
       dockerfile: exo.Dockerfile
     environment:
-      EXO_MODEL: mlx-community/Qwen3-0.6B-4bit
+      EXO_MODEL: LiquidAI/LFM2.5-350M-MLX-4bit
       EXO_PORT: 52415
     volumes:
       - ./exo-entrypoint.sh:/entrypoint.sh:ro
@@ -83,7 +83,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "EXO_MODEL=$${EXO_MODEL} python -c \"import json, os, urllib.request; state=json.load(urllib.request.urlopen('http://127.0.0.1:52415/state')); model=os.environ['EXO_MODEL']; assert any(instance.get('MlxRingInstance', {}).get('shardAssignments', {}).get('modelId') == model for instance in state.get('instances', {}).values())\"",
+          "EXO_MODEL=$${EXO_MODEL} python -c \"import json, os, urllib.request; state=json.load(urllib.request.urlopen('http://127.0.0.1:52415/state')); model=os.environ['EXO_MODEL']; runner_id=None; instances=state.get('instances', {}); runners=state.get('runners', {}); [runner_id := next(iter(instance.get('MlxRingInstance', {}).get('shardAssignments', {}).get('nodeToRunner', {}).values()), None) for instance in instances.values() if instance.get('MlxRingInstance', {}).get('shardAssignments', {}).get('modelId') == model]; assert runner_id is not None; assert 'RunnerReady' in runners.get(runner_id, {})\"",
         ]
       interval: 10s
       timeout: 10s

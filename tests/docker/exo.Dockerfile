@@ -70,6 +70,7 @@ FROM python:3.13-slim-bookworm AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
+    g++ \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 

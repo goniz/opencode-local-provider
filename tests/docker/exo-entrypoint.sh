@@ -4,7 +4,7 @@ set -euo pipefail
 # Exo entrypoint script
 # Loads a small model for testing
 
-EXO_MODEL="${EXO_MODEL:-mlx-community/Qwen3-0.6B-4bit}"
+EXO_MODEL="${EXO_MODEL:-LiquidAI/LFM2.5-350M-MLX-4bit}"
 EXO_PORT="${EXO_PORT:-52415}"
 
 # Create models directory if needed
@@ -38,7 +38,7 @@ curl -fsS -X POST "http://127.0.0.1:${EXO_PORT}/instance" \
   -H 'Content-Type: application/json' \
   -d "${placement_payload}" >/dev/null
 
-echo "Waiting for model instance to become active..."
+echo "Waiting for model runner to become ready..."
 until EXO_MODEL="${EXO_MODEL}" EXO_PORT="${EXO_PORT}" python - <<'PY'
 import json
 import os
@@ -51,12 +51,27 @@ with urllib.request.urlopen(f"http://127.0.0.1:{port}/state") as response:
     state = json.load(response)
 
 instances = state.get("instances", {})
-active = any(
-    instance.get("MlxRingInstance", {}).get("shardAssignments", {}).get("modelId") == model_id
-    for instance in instances.values()
-)
+runners = state.get("runners", {})
 
-raise SystemExit(0 if active else 1)
+runner_id = None
+for instance in instances.values():
+    instance_data = instance.get("MlxRingInstance", {})
+    if instance_data.get("shardAssignments", {}).get("modelId") != model_id:
+        continue
+
+    node_to_runner = instance_data.get("shardAssignments", {}).get("nodeToRunner", {})
+    if node_to_runner:
+        runner_id = next(iter(node_to_runner.values()))
+        break
+
+runner_state = runners.get(runner_id, {}) if runner_id else {}
+ready = "RunnerReady" in runner_state
+failed = runner_state.get("RunnerFailed", {}).get("errorMessage")
+
+if failed:
+    raise SystemExit(f"Runner failed before becoming ready: {failed}")
+
+raise SystemExit(0 if ready else 1)
 PY
 do
   sleep 2
