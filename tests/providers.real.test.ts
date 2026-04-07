@@ -11,26 +11,31 @@ const suites = [
     kind: "ollama",
     url: process.env.OLLAMA_URL ?? "http://ollama:11434",
     modelID: process.env.OLLAMA_MODEL,
+    expectedContext: 128,
   },
   {
     kind: "lmstudio",
     url: process.env.LMSTUDIO_URL ?? "http://lmstudio:1234",
     modelID: process.env.LMSTUDIO_MODEL_ID,
+    expectedContext: 128,
   },
   {
     kind: "llamacpp",
     url: process.env.LLAMACPP_URL ?? "http://llamacpp:8080",
     modelID: process.env.LLAMACPP_MODEL_ID,
+    expectedContext: 128,
   },
   {
     kind: "vllm",
     url: process.env.VLLM_URL ?? "http://vllm:8000",
     modelID: process.env.VLLM_MODEL,
+    expectedContext: 128,
   },
   {
     kind: "exo",
     url: process.env.EXO_URL ?? "http://exo:52415",
     modelID: process.env.EXO_MODEL,
+    expectedContext: 128000,
   },
 ] as const
 
@@ -60,6 +65,17 @@ describeIfEnabled("real provider integration", () => {
       expect(model!.context).toBeGreaterThan(0)
       expect(typeof model!.toolcall).toBe("boolean")
       expect(typeof model!.vision).toBe("boolean")
+    }, 120_000)
+
+    test(`${item.kind} reports the expected context length`, async () => {
+      const result = await probe(item.url, undefined, item.kind)
+
+      const model = item.modelID
+        ? result.models.find((entry) => entry.id === item.modelID)
+        : result.models[0]
+
+      expect(model).toBeDefined()
+      expect(model!.context).toBe(item.expectedContext)
     }, 120_000)
 
     test(`${item.kind} detects and probes from /v1 url`, async () => {

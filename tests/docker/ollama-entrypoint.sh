@@ -15,6 +15,7 @@ until ollama list >/dev/null 2>&1; do
 done
 
 ollama pull "$OLLAMA_MODEL"
+
 ollama run "$OLLAMA_MODEL" "hello" >/dev/null 2>&1 || true
 
 wait "$server_pid"

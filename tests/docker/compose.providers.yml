@@ -3,6 +3,7 @@ services:
     image: ollama/ollama:latest
     environment:
       OLLAMA_HOST: 0.0.0.0:11434
+      OLLAMA_CONTEXT_LENGTH: 128
       OLLAMA_KEEP_ALIVE: -1
       OLLAMA_MODEL: hf.co/LiquidAI/LFM2.5-350M-GGUF:Q8_0
     volumes:
@@ -20,7 +21,7 @@ services:
     environment:
       LMSTUDIO_MODEL: liquid/lfm2.5-350m
       LMSTUDIO_MODEL_ID: lfm2.5-350m
-      LMSTUDIO_CONTEXT: 2048
+      LMSTUDIO_CONTEXT: 128
     volumes:
       - ./lmstudio-entrypoint.sh:/entrypoint.sh:ro
     entrypoint: ["bash", "/entrypoint.sh"]
@@ -35,7 +36,7 @@ services:
     image: ghcr.io/ggml-org/llama.cpp:server
     environment:
       LLAMACPP_MODEL_REPO: LiquidAI/LFM2.5-350M-GGUF:Q8_0
-      LLAMACPP_CONTEXT: 2048
+      LLAMACPP_CONTEXT: 128
     volumes:
       - ./llamacpp-entrypoint.sh:/entrypoint.sh:ro
     entrypoint: ["bash", "/entrypoint.sh"]
@@ -52,7 +53,7 @@ services:
       - --host=0.0.0.0
       - --port=8000
       - --dtype=auto
-      - --max-model-len=256
+      - --max-model-len=128
       - --no-enable-prefix-caching
       - --trust-remote-code
       - Qwen/Qwen2.5-0.5B-Instruct
