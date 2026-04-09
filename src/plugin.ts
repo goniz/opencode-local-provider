@@ -15,8 +15,9 @@ import {
   saveProviderTarget,
 } from "./config"
 import { build } from "./models"
-import { supportedProviderKinds } from "./providers"
+import { supportedProviderDefaultURLs, supportedProviderKinds } from "./providers"
 import { detect, probe } from "./probe"
+import type { LocalProviderKind } from "./types"
 import { trimURL } from "./url"
 
 function validID(value: string) {
@@ -77,10 +78,28 @@ export const LocalProviderPlugin: Plugin = async (ctx) => {
           label: "Connect to Local Provider",
           prompts: [
             {
+              type: "select",
+              key: "autoDetect",
+              message: "Auto-detect supported local providers on their default ports?",
+              options: [
+                {
+                  label: "Yes",
+                  value: "yes",
+                  hint: "Find and configure supported local providers automatically",
+                },
+                {
+                  label: "No",
+                  value: "no",
+                  hint: "Configure a single target manually",
+                },
+              ],
+            },
+            {
               type: "text",
               key: "target",
               message: "Enter a target ID",
               placeholder: "ollama",
+              when: { key: "autoDetect", op: "eq", value: "no" },
               validate(value) {
                 if (!value) return "Target ID is required"
                 if (!validID(value)) return "Use lowercase letters, numbers, - or _"
@@ -91,40 +110,64 @@ export const LocalProviderPlugin: Plugin = async (ctx) => {
               key: "baseURL",
               message: "Enter your local provider URL",
               placeholder: "http://localhost:11434",
+              when: { key: "autoDetect", op: "eq", value: "no" },
               validate(value) {
                 if (!trimURL(value ?? "")) return "URL is required"
               },
             },
-            {
-              type: "text",
-              key: "apiKey",
-              message: "Shared API key (leave empty to keep current, enter none to clear)",
-              placeholder: "Bearer token or empty",
-            },
           ],
           async authorize(input = {}) {
+            const cur = await getCurrentProviderConfig(ctx.serverUrl, ctx.client)
+            const key = ctx.auth || cur.key
+
+            if (input.autoDetect === "yes") {
+              const detected = await Promise.all(
+                Object.entries(supportedProviderDefaultURLs).map(async ([id, raw]) => {
+                  try {
+                    const kind = await detect(raw, key)
+                    if (!kind) return
+                    await probe(raw, key, kind)
+                    return { id, raw, kind }
+                  } catch {
+                    return
+                  }
+                }),
+              )
+
+              const targets = detected.filter(
+                (item): item is { id: string; raw: string; kind: LocalProviderKind } => Boolean(item),
+              )
+              if (!targets.length) return { type: "failed" as const }
+
+              try {
+                for (const item of targets) {
+                  await saveProviderTarget(ctx.serverUrl, ctx.client, item.id, item.raw, item.kind)
+                }
+              } catch {
+                return { type: "failed" as const }
+              }
+
+              return {
+                type: "success" as const,
+                provider: LOCAL_PROVIDER_ID,
+              }
+            }
+
             const id = input.target?.trim() ?? ""
             const raw = trimURL(input.baseURL ?? "")
             if (!id || !validID(id) || !raw) return { type: "failed" as const }
-
-            const cur = await getCurrentProviderConfig(ctx.serverUrl, ctx.client)
-            const prev = cur.key
-            const next = input.apiKey?.trim()
-            const key = next === "none" ? "" : next || prev
-            const saveKey = next === "none" ? "" : next || undefined
 
             try {
               const kind = await detect(raw, key)
               if (!kind) return { type: "failed" as const }
               await probe(raw, key, kind)
-              await saveProviderTarget(ctx.serverUrl, ctx.client, id, raw, kind, saveKey)
+              await saveProviderTarget(ctx.serverUrl, ctx.client, id, raw, kind)
             } catch {
               return { type: "failed" as const }
             }
 
             return {
               type: "success" as const,
-              key,
               provider: LOCAL_PROVIDER_ID,
             }
           },
