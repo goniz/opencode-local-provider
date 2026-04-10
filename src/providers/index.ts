@@ -16,7 +16,7 @@ export const supportedProviders: ProviderMap = {
 }
 
 export const supportedProviderDefaultURLs: Record<LocalProviderKind, string> = {
-  ollama: "http://localhost:11434",
+  ollama: "http://127.0.0.1:11434",
   lmstudio: "http://127.0.0.1:1234",
   llamacpp: "http://127.0.0.1:8080",
   vllm: "http://127.0.0.1:8000",

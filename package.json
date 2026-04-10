@@ -34,8 +34,8 @@
   ],
   "scripts": {
     "build": "bun build src/index.ts --outdir=dist --target=bun --format=esm --packages=external",
-    "test": "bun test",
-    "test:providers": "bash tests/docker/run-providers-suite.sh",
+    "test": "bun test ./tests",
+    "test:providers": "bun test ./tests/providers.test.ts",
     "typecheck": "bun tsc --noEmit",
     "prepublishOnly": "bun run build"
   },

@@ -15,7 +15,7 @@ Instead of creating one provider per server, this plugin keeps one `local` provi
 
 - Adds a `local` provider to OpenCode
 - Supports multiple local URLs under one provider
-- Includes supported default localhost targets automatically
+- Includes supported default `127.0.0.1` targets automatically
 - Detects loaded models at runtime
 - Routes each model to the correct target URL
 - Supports optional shared API key auth
@@ -37,7 +37,7 @@ OpenCode will install the package and update the config for you.
 
 Default targets are enabled automatically for these backends and ports:
 
-- Ollama: `http://localhost:11434`
+- Ollama: `http://127.0.0.1:11434`
 - LM Studio: `http://127.0.0.1:1234`
 - llama.cpp: `http://127.0.0.1:8080`
 - vLLM: `http://127.0.0.1:8000`
@@ -76,7 +76,6 @@ You can also add explicit targets manually in config if needed:
   "provider": {
     "local": {
       "name": "Local Provider",
-      "npm": "@ai-sdk/openai-compatible",
       "options": {
         "includeDefaults": true,
         "targets": {
@@ -103,7 +102,6 @@ The plugin stores explicit targets in OpenCode global config under the `local` p
   "provider": {
     "local": {
       "name": "Local Provider",
-      "npm": "@ai-sdk/openai-compatible",
       "options": {
         "includeDefaults": true,
         "targets": {
@@ -118,7 +116,7 @@ The plugin stores explicit targets in OpenCode global config under the `local` p
 }
 ```
 
-With `includeDefaults: true`, the built-in default localhost targets are also checked at runtime even though they are not written into config.
+With `includeDefaults: true`, the built-in default `127.0.0.1` targets are also checked at runtime even though they are not written into config.
 
 If you set a shared API key, it is stored through OpenCode auth for the `local` provider.
 
@@ -137,7 +135,7 @@ Each generated model keeps its own target URL internally, so requests go to the 
 
 - Model detection is runtime-based, not static
 - If loaded models change in your local server, OpenCode will see the updated list on the next provider refresh
-- Built-in default localhost targets are enabled unless you set `includeDefaults` to `false`
+- Built-in default `127.0.0.1` targets are enabled unless you set `includeDefaults` to `false`
 - Targets use one shared API key for the `local` provider
 
 ## Development
@@ -148,7 +146,7 @@ Build the plugin:
 bun run build
 ```
 
-Run the real provider integration suite in Docker Compose:
+Run the provider integration suite:
 
 ```bash
 bun run test:providers
@@ -157,16 +155,16 @@ bun run test:providers
 Run a single provider suite:
 
 ```bash
-bun run test:providers ollama
+PROVIDER_SUITE=ollama bun run test:providers
 ```
 
 Notes:
 
-- The suite starts real provider containers for `ollama`, `lmstudio`, `llamacpp`, `vllm`, and `exo` from `tests/docker/compose.providers.yml`.
-- The runner talks to each service over the Docker Compose network using each container's internal IP. It does not require publishing ports to the host.
+- The suite starts provider containers for `ollama`, `lmstudio`, `llamacpp`, `vllm`, and `exo` from `tests/docker/compose.providers.yml`.
+- The Bun test runner talks to each service over the Docker Compose network using each container's internal IP. It does not require publishing ports to the host.
 - The first run can be slow because the containers may need to download model assets, LM Studio bootstraps its headless runtime at startup, and Exo warms models to a real ready state before the suite proceeds.
 - CI runs the same suite per provider via `.github/workflows/provider-tests.yml`.
-- If you change provider models or startup behavior, update `tests/docker/compose.providers.yml` and the related health checks instead of duplicating those details here.
+- If you change provider models or startup behavior, update `tests/docker/compose.providers.yml` and the Bun orchestration helpers in `tests/docker/` instead of duplicating those details here.
 
 Install it locally in OpenCode with a file path plugin entry, for example:
 

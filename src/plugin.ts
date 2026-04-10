@@ -10,7 +10,6 @@ import {
 } from "./constants"
 import {
   getConfiguredTargets,
-  getCurrentProviderConfig,
   getProviderApiKey,
   getProviderTargets,
   saveProviderTarget,
@@ -18,7 +17,7 @@ import {
 import { build } from "./models"
 import { supportedProviderKinds } from "./providers"
 import { detect, probe } from "./probe"
-import { baseURL, trimURL } from "./url"
+import { trimURL } from "./url"
 
 function validID(value: string) {
   return /^[a-z0-9][a-z0-9-_]*$/.test(value)
@@ -118,24 +117,14 @@ export const LocalProviderPlugin: Plugin = async (ctx) => {
             const key = next === "none" ? "" : next
             if (!id || !validID(id) || !raw || !next) return { type: "failed" as const }
 
-            const cur = await getCurrentProviderConfig(ctx.serverUrl, ctx.client)
-            const prev = cur.targets[id]
-            if (prev && prev.url !== baseURL(raw)) return { type: "failed" as const }
-
             const kind = await detect(raw, key).catch(() => undefined)
             if (!kind) return { type: "failed" as const }
 
             try {
               await probe(raw, key, kind)
-            } catch {
-              return { type: "failed" as const }
-            }
-
-            try {
               await saveProviderTarget(ctx.serverUrl, ctx.client, id, raw, kind)
             } catch {
-              const now = await getCurrentProviderConfig(ctx.serverUrl, ctx.client).catch(() => undefined)
-              if (now?.targets[id]?.url !== baseURL(raw)) return { type: "failed" as const }
+              return { type: "failed" as const }
             }
 
             return {
