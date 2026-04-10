@@ -9,16 +9,16 @@ import {
   OPENAI_COMPATIBLE_NPM,
 } from "./constants"
 import {
+  getConfiguredTargets,
   getCurrentProviderConfig,
   getProviderApiKey,
   getProviderTargets,
   saveProviderTarget,
 } from "./config"
 import { build } from "./models"
-import { supportedProviderDefaultURLs, supportedProviderKinds } from "./providers"
+import { supportedProviderKinds } from "./providers"
 import { detect, probe } from "./probe"
-import type { LocalProviderKind } from "./types"
-import { trimURL } from "./url"
+import { baseURL, trimURL } from "./url"
 
 function validID(value: string) {
   return /^[a-z0-9][a-z0-9-_]*$/.test(value)
@@ -57,9 +57,10 @@ export const LocalProviderPlugin: Plugin = async (ctx) => {
     config: async (cfg) => {
       cfg.provider ??= {}
       const provider = cfg.provider[LOCAL_PROVIDER_ID] ?? {}
-      const list = getProviderTargets(provider as Provider)
+      const list = getConfiguredTargets(provider as Provider)
       const options = {
         ...provider.options,
+        includeDefaults: provider.options?.includeDefaults ?? true,
         targets: list,
       }
       delete options.baseURL
@@ -75,31 +76,17 @@ export const LocalProviderPlugin: Plugin = async (ctx) => {
       methods: [
         {
           type: "api",
-          label: "Connect to Local Provider",
+          label: "Set Shared API Key",
+        },
+        {
+          type: "api",
+          label: "Add Custom Target (CLI only)",
           prompts: [
-            {
-              type: "select",
-              key: "autoDetect",
-              message: "Auto-detect supported local providers on their default ports?",
-              options: [
-                {
-                  label: "Yes",
-                  value: "yes",
-                  hint: "Find and configure supported local providers automatically",
-                },
-                {
-                  label: "No",
-                  value: "no",
-                  hint: "Configure a single target manually",
-                },
-              ],
-            },
             {
               type: "text",
               key: "target",
               message: "Enter a target ID",
-              placeholder: "ollama",
-              when: { key: "autoDetect", op: "eq", value: "no" },
+              placeholder: "studio",
               validate(value) {
                 if (!value) return "Target ID is required"
                 if (!validID(value)) return "Use lowercase letters, numbers, - or _"
@@ -109,66 +96,52 @@ export const LocalProviderPlugin: Plugin = async (ctx) => {
               type: "text",
               key: "baseURL",
               message: "Enter your local provider URL",
-              placeholder: "http://localhost:11434",
-              when: { key: "autoDetect", op: "eq", value: "no" },
+              placeholder: "http://192.168.1.10:1234",
               validate(value) {
                 if (!trimURL(value ?? "")) return "URL is required"
               },
             },
+            {
+              type: "text",
+              key: "apiKey",
+              message: "Re-enter the shared API key for this provider (enter none if unused)",
+              placeholder: "none",
+              validate(value) {
+                if (!value?.trim()) return "API key is required; enter none if unused"
+              },
+            },
           ],
           async authorize(input = {}) {
-            const cur = await getCurrentProviderConfig(ctx.serverUrl, ctx.client)
-            const key = ctx.auth || cur.key
-
-            if (input.autoDetect === "yes") {
-              const detected = await Promise.all(
-                Object.entries(supportedProviderDefaultURLs).map(async ([id, raw]) => {
-                  try {
-                    const kind = await detect(raw, key)
-                    if (!kind) return
-                    await probe(raw, key, kind)
-                    return { id, raw, kind }
-                  } catch {
-                    return
-                  }
-                }),
-              )
-
-              const targets = detected.filter(
-                (item): item is { id: string; raw: string; kind: LocalProviderKind } => Boolean(item),
-              )
-              if (!targets.length) return { type: "failed" as const }
-
-              try {
-                for (const item of targets) {
-                  await saveProviderTarget(ctx.serverUrl, ctx.client, item.id, item.raw, item.kind)
-                }
-              } catch {
-                return { type: "failed" as const }
-              }
-
-              return {
-                type: "success" as const,
-                provider: LOCAL_PROVIDER_ID,
-              }
-            }
-
             const id = input.target?.trim() ?? ""
             const raw = trimURL(input.baseURL ?? "")
-            if (!id || !validID(id) || !raw) return { type: "failed" as const }
+            const next = input.apiKey?.trim() ?? ""
+            const key = next === "none" ? "" : next
+            if (!id || !validID(id) || !raw || !next) return { type: "failed" as const }
+
+            const cur = await getCurrentProviderConfig(ctx.serverUrl, ctx.client)
+            const prev = cur.targets[id]
+            if (prev && prev.url !== baseURL(raw)) return { type: "failed" as const }
+
+            const kind = await detect(raw, key).catch(() => undefined)
+            if (!kind) return { type: "failed" as const }
 
             try {
-              const kind = await detect(raw, key)
-              if (!kind) return { type: "failed" as const }
               await probe(raw, key, kind)
-              await saveProviderTarget(ctx.serverUrl, ctx.client, id, raw, kind)
             } catch {
               return { type: "failed" as const }
+            }
+
+            try {
+              await saveProviderTarget(ctx.serverUrl, ctx.client, id, raw, kind)
+            } catch {
+              const now = await getCurrentProviderConfig(ctx.serverUrl, ctx.client).catch(() => undefined)
+              if (now?.targets[id]?.url !== baseURL(raw)) return { type: "failed" as const }
             }
 
             return {
               type: "success" as const,
               provider: LOCAL_PROVIDER_ID,
+              key,
             }
           },
         },
