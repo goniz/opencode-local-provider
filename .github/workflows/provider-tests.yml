@@ -29,4 +29,19 @@ jobs:
       - run: bun install --frozen-lockfile
 
       - name: Run ${{ matrix.provider }} suite
-        run: bash tests/docker/run-providers-suite.sh "${{ matrix.provider }}"
+        run: PROVIDER_SUITE="${{ matrix.provider }}" bun test ./tests/providers.test.ts
+
+  opencode-tests:
+    name: opencode tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+
+      - name: Run opencode llama.cpp suite
+        run: bun test ./tests/opencode.models.test.ts

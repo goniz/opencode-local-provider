@@ -9,7 +9,7 @@ import {
   OPENAI_COMPATIBLE_NPM,
 } from "./constants"
 import {
-  getCurrentProviderConfig,
+  getConfiguredTargets,
   getProviderApiKey,
   getProviderTargets,
   saveProviderTarget,
@@ -56,9 +56,10 @@ export const LocalProviderPlugin: Plugin = async (ctx) => {
     config: async (cfg) => {
       cfg.provider ??= {}
       const provider = cfg.provider[LOCAL_PROVIDER_ID] ?? {}
-      const list = getProviderTargets(provider as Provider)
+      const list = getConfiguredTargets(provider as Provider)
       const options = {
         ...provider.options,
+        includeDefaults: provider.options?.includeDefaults ?? true,
         targets: list,
       }
       delete options.baseURL
@@ -74,13 +75,17 @@ export const LocalProviderPlugin: Plugin = async (ctx) => {
       methods: [
         {
           type: "api",
-          label: "Connect to Local Provider",
+          label: "Set Shared API Key",
+        },
+        {
+          type: "api",
+          label: "Add Custom Target (CLI only)",
           prompts: [
             {
               type: "text",
               key: "target",
               message: "Enter a target ID",
-              placeholder: "ollama",
+              placeholder: "studio",
               validate(value) {
                 if (!value) return "Target ID is required"
                 if (!validID(value)) return "Use lowercase letters, numbers, - or _"
@@ -90,7 +95,7 @@ export const LocalProviderPlugin: Plugin = async (ctx) => {
               type: "text",
               key: "baseURL",
               message: "Enter your local provider URL",
-              placeholder: "http://localhost:11434",
+              placeholder: "http://192.168.1.10:1234",
               validate(value) {
                 if (!trimURL(value ?? "")) return "URL is required"
               },
@@ -98,34 +103,34 @@ export const LocalProviderPlugin: Plugin = async (ctx) => {
             {
               type: "text",
               key: "apiKey",
-              message: "Shared API key (leave empty to keep current, enter none to clear)",
-              placeholder: "Bearer token or empty",
+              message: "Re-enter the shared API key for this provider (enter none if unused)",
+              placeholder: "none",
+              validate(value) {
+                if (!value?.trim()) return "API key is required; enter none if unused"
+              },
             },
           ],
           async authorize(input = {}) {
             const id = input.target?.trim() ?? ""
             const raw = trimURL(input.baseURL ?? "")
-            if (!id || !validID(id) || !raw) return { type: "failed" as const }
+            const next = input.apiKey?.trim() ?? ""
+            const key = next === "none" ? "" : next
+            if (!id || !validID(id) || !raw || !next) return { type: "failed" as const }
 
-            const cur = await getCurrentProviderConfig(ctx.serverUrl, ctx.client)
-            const prev = cur.key
-            const next = input.apiKey?.trim()
-            const key = next === "none" ? "" : next || prev
-            const saveKey = next === "none" ? "" : next || undefined
+            const kind = await detect(raw, key).catch(() => undefined)
+            if (!kind) return { type: "failed" as const }
 
             try {
-              const kind = await detect(raw, key)
-              if (!kind) return { type: "failed" as const }
               await probe(raw, key, kind)
-              await saveProviderTarget(ctx.serverUrl, ctx.client, id, raw, kind, saveKey)
+              await saveProviderTarget(ctx.serverUrl, ctx.client, id, raw, kind)
             } catch {
               return { type: "failed" as const }
             }
 
             return {
               type: "success" as const,
-              key,
               provider: LOCAL_PROVIDER_ID,
+              key,
             }
           },
         },

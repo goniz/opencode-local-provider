@@ -47,6 +47,20 @@ services:
       retries: 60
       start_period: 30s
 
+  opencode:
+    image: ghcr.io/anomalyco/opencode
+    depends_on:
+      llamacpp:
+        condition: service_healthy
+    network_mode: "service:llamacpp"
+    volumes:
+      - ../..:/workspace
+    working_dir: /tmp/opencode-test
+    entrypoint:
+      - sh
+      - -lc
+      - mkdir -p /tmp/opencode-test && while :; do sleep 3600; done
+
   vllm:
     image: vllm/vllm-openai-cpu:latest-x86_64
     command:

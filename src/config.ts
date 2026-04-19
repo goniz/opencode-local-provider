@@ -3,6 +3,7 @@ import { createOpencodeClient } from "@opencode-ai/sdk/v2/client"
 import type { Provider } from "@opencode-ai/sdk/v2"
 
 import { LEGACY_TARGET_ID, LOCAL_PROVIDER_ID } from "./constants"
+import { supportedProviderDefaultURLs } from "./providers"
 import { KINDS, type LocalTarget } from "./types"
 import { baseURL } from "./url"
 
@@ -50,7 +51,17 @@ function parseTargetConfig(item: unknown) {
   }
 }
 
-export function getProviderTargets(provider?: Pick<Provider, "options">) {
+const defaults = Object.fromEntries(
+  Object.entries(supportedProviderDefaultURLs).map(([id, url]) => [
+    id,
+    {
+      url: baseURL(url),
+      kind: id as LocalTarget["kind"],
+    },
+  ]),
+) as Record<string, LocalTarget>
+
+export function getConfiguredTargets(provider?: Pick<Provider, "options">) {
   const raw = provider?.options?.targets
   if (raw && typeof raw === "object" && !Array.isArray(raw)) {
     const next = Object.fromEntries(
@@ -77,6 +88,21 @@ export function getProviderTargets(provider?: Pick<Provider, "options">) {
   return {}
 }
 
+export function getProviderTargets(provider?: Pick<Provider, "options">) {
+  const configured = getConfiguredTargets(provider)
+  if (provider?.options?.includeDefaults === false) return configured
+
+  const urls = new Set(Object.values(configured).map((item) => item.url))
+  const builtin = Object.fromEntries(
+    Object.entries(defaults).filter(([id, item]) => !configured[id] && !urls.has(item.url)),
+  ) as Record<string, LocalTarget>
+
+  return {
+    ...builtin,
+    ...configured,
+  }
+}
+
 export function getProviderApiKey(provider?: Pick<Provider, "options">, auth?: { type: string; key?: string }) {
   const val = provider?.options?.apiKey
   if (typeof val === "string" && val) return val
@@ -87,7 +113,7 @@ export async function getCurrentProviderConfig(url: URL, input: PluginInput["cli
   const cfg = await createV2OpencodeClient(url, input).global.config.get()
   const provider = cfg.data?.provider?.[LOCAL_PROVIDER_ID]
   return {
-    targets: getProviderTargets(provider as Pick<Provider, "options"> | undefined),
+    targets: getConfiguredTargets(provider as Pick<Provider, "options"> | undefined),
     key: typeof provider?.options?.apiKey === "string" ? provider.options.apiKey : "",
   }
 }
@@ -110,7 +136,7 @@ export async function saveProviderTarget(
       },
     },
   }
-  
+
   if (key !== undefined) options.apiKey = key
 
   await createV2OpencodeClient(server, input).global.config.update({
