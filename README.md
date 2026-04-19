@@ -18,7 +18,7 @@ Instead of creating one provider per server, this plugin keeps one `local` provi
 - Includes supported default `127.0.0.1` targets automatically
 - Detects loaded models at runtime
 - Routes each model to the correct target URL
-- Supports optional shared API key auth
+- API key auth currently unsupported
 - Uses OpenCode global config, not project-local config
 
 ## Example
@@ -45,13 +45,7 @@ Default targets are enabled automatically for these backends and ports:
 
 If your local providers do not need auth, you can start using the `local` provider immediately.
 
-If your local providers share an API key, run:
-
-```bash
-opencode auth login
-```
-
-Choose `local`, then choose `Set Shared API Key` and enter the shared API key.
+**Note: API key authentication is currently unsupported.**
 
 ## Custom Targets
 
@@ -65,7 +59,7 @@ This will prompt for:
 
 - a target ID, like `studio` or `remote-ollama`
 - the local provider URL
-- the shared API key for that provider again, or `none` if unused
+- the API key (enter `none` since API keys are currently unsupported)
 
 The target is then stored in OpenCode global config.
 
@@ -118,7 +112,7 @@ The plugin stores explicit targets in OpenCode global config under the `local` p
 
 With `includeDefaults: true`, the built-in default `127.0.0.1` targets are also checked at runtime even though they are not written into config.
 
-If you set a shared API key, it is stored through OpenCode auth for the `local` provider.
+**Note: API key authentication is currently unsupported.**
 
 ## How Models Appear
 
@@ -136,7 +130,7 @@ Each generated model keeps its own target URL internally, so requests go to the 
 - Model detection is runtime-based, not static
 - If loaded models change in your local server, OpenCode will see the updated list on the next provider refresh
 - Built-in default `127.0.0.1` targets are enabled unless you set `includeDefaults` to `false`
-- Targets use one shared API key for the `local` provider
+- **API key authentication is currently unsupported**
 
 ## Development
 

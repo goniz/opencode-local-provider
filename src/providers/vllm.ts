@@ -1,11 +1,9 @@
 import type { LocalModel } from "../types"
-import { authHeaders } from "../url"
 import type { ProviderImpl } from "./shared"
 
-async function detect(url: string, key?: string) {
+async function detect(url: string) {
   try {
     const res = await fetch(url + "/v1/models", {
-      headers: authHeaders(key),
       signal: AbortSignal.timeout(2000),
     })
     if (!res.ok) return false
@@ -18,9 +16,8 @@ async function detect(url: string, key?: string) {
   }
 }
 
-async function probe(url: string, key?: string): Promise<LocalModel[]> {
+async function probe(url: string): Promise<LocalModel[]> {
   const res = await fetch(url + "/v1/models", {
-    headers: authHeaders(key),
     signal: AbortSignal.timeout(3000),
   })
   if (!res.ok) throw new Error(`vLLM probe failed: ${res.status}`)

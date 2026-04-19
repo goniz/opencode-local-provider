@@ -10,7 +10,6 @@ import {
 } from "./constants"
 import {
   getConfiguredTargets,
-  getProviderApiKey,
   getProviderTargets,
   saveProviderTarget,
 } from "./config"
@@ -27,12 +26,10 @@ async function probeModels(provider: Provider, ctx: ProviderHookContext) {
   const list = getProviderTargets(provider)
   if (!Object.keys(list).length) return {}
 
-  const auth = getProviderApiKey(provider, ctx.auth)
-
   const all = await Promise.all(
     Object.entries(list).map(async ([id, item]) => {
       try {
-        const found = await probe(item.url, auth, item.kind)
+        const found = await probe(item.url, item.kind)
         return build(provider.id, id, item.url, found.models, provider.models)
       } catch {
         return {}
@@ -73,10 +70,6 @@ export const LocalProviderPlugin: Plugin = async (ctx) => {
     auth: {
       provider: LOCAL_PROVIDER_ID,
       methods: [
-        {
-          type: "api",
-          label: "Set Shared API Key",
-        },
         {
           type: "api",
           label: "Add Custom Target",
@@ -128,12 +121,6 @@ export const LocalProviderPlugin: Plugin = async (ctx) => {
                 },
               })
               return { type: "failed" as const }
-            }
-
-            return {
-              type: "success" as const,
-              provider: LOCAL_PROVIDER_ID,
-              key,
             }
           },
         },

@@ -13,8 +13,3 @@ export function rootURL(url: string) {
   if (!next) return ""
   return next.endsWith("/v1") ? next.slice(0, -3) : next
 }
-
-export function authHeaders(key?: string) {
-  if (!key) return {} as Record<string, string>
-  return { Authorization: `Bearer ${key}` }
-}

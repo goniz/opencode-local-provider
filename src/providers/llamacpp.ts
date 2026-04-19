@@ -1,11 +1,9 @@
 import type { LocalModel } from "../types"
-import { authHeaders } from "../url"
 import type { ProviderImpl } from "./shared"
 
-async function runtimeContext(url: string, key?: string) {
+async function runtimeContext(url: string) {
   try {
     const propsRes = await fetch(url + "/props", {
-      headers: authHeaders(key),
       signal: AbortSignal.timeout(3000),
     })
     if (propsRes.ok) {
@@ -20,7 +18,6 @@ async function runtimeContext(url: string, key?: string) {
 
   try {
     const slotsRes = await fetch(url + "/slots", {
-      headers: authHeaders(key),
       signal: AbortSignal.timeout(3000),
     })
     if (slotsRes.ok) {
@@ -33,10 +30,9 @@ async function runtimeContext(url: string, key?: string) {
   return null
 }
 
-async function detect(url: string, key?: string) {
+async function detect(url: string) {
   try {
     const res = await fetch(url, {
-      headers: authHeaders(key),
       signal: AbortSignal.timeout(2000),
     })
     if (!res.ok) return false
@@ -46,10 +42,9 @@ async function detect(url: string, key?: string) {
   }
 }
 
-async function probe(url: string, key?: string): Promise<LocalModel[]> {
-  const loadedContext = await runtimeContext(url, key)
+async function probe(url: string): Promise<LocalModel[]> {
+  const loadedContext = await runtimeContext(url)
   const res = await fetch(url + "/v1/models", {
-    headers: authHeaders(key),
     signal: AbortSignal.timeout(3000),
   })
   if (!res.ok) throw new Error(`llama.cpp probe failed: ${res.status}`)
