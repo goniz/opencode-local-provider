@@ -100,30 +100,33 @@ export const LocalProviderPlugin: Plugin = async (ctx) => {
                 if (!trimURL(value ?? "")) return "URL is required"
               },
             },
-            {
-              type: "text",
-              key: "apiKey",
-              message: "Re-enter the shared API key for this provider (enter none if unused)",
-              placeholder: "none",
-              validate(value) {
-                if (!value?.trim()) return "API key is required; enter none if unused"
-              },
-            },
           ],
           async authorize(input = {}) {
             const id = input.target?.trim() ?? ""
             const raw = trimURL(input.baseURL ?? "")
-            const next = input.apiKey?.trim() ?? ""
-            const key = next === "none" ? "" : next
-            if (!id || !validID(id) || !raw || !next) return { type: "failed" as const }
-
-            const kind = await detect(raw, key).catch(() => undefined)
-            if (!kind) return { type: "failed" as const }
-
             try {
-              await probe(raw, key, kind)
+              if (!id || !validID(id) || !raw) {
+                throw new Error("Invalid target ID or URL")
+              }
+
+              const result = await probe(raw)
+              const kind = result.kind
               await saveProviderTarget(ctx.serverUrl, ctx.client, id, raw, kind)
-            } catch {
+
+              return {
+                type: "success" as const,
+                provider: LOCAL_PROVIDER_ID,
+                key: "",
+              }
+            } catch (e) {
+              const errorMessage = e instanceof Error ? e.message : String(e)
+              await ctx.client.app.log({
+                body: {
+                  service: LOCAL_PLUGIN_SERVICE,
+                  level: "error",
+                  message: `Authorization failed: ${errorMessage}`,
+                },
+              })
               return { type: "failed" as const }
             }
 
