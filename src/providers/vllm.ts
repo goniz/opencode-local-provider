@@ -1,5 +1,18 @@
+import { z } from "zod"
 import type { LocalModel } from "../types"
 import type { ProviderImpl } from "./shared"
+
+const ModelsResponseSchema = z.object({
+  data: z
+    .array(
+      z.object({
+        id: z.string(),
+        owned_by: z.string().optional(),
+        max_model_len: z.number().optional(),
+      }),
+    )
+    .optional(),
+})
 
 async function detect(url: string) {
   try {
@@ -8,9 +21,11 @@ async function detect(url: string) {
     })
     if (!res.ok) return false
     if (res.headers.get("Server")?.toLowerCase() !== "uvicorn") return false
-    const body = (await res.json()) as { data?: Array<{ owned_by?: string }> }
-    if (!Array.isArray(body.data)) return false
-    return body.data.length === 0 || body.data[0]?.owned_by === "vllm"
+    const parsed = ModelsResponseSchema.safeParse(await res.json())
+    if (!parsed.success) return false
+    const data = parsed.data.data
+    if (!data) return false
+    return data.length === 0 || data[0]?.owned_by === "vllm"
   } catch {
     return false
   }
@@ -21,12 +36,7 @@ async function probe(url: string): Promise<LocalModel[]> {
     signal: AbortSignal.timeout(3000),
   })
   if (!res.ok) throw new Error(`vLLM probe failed: ${res.status}`)
-  const body = (await res.json()) as {
-    data?: Array<{
-      id: string
-      max_model_len?: number
-    }>
-  }
+  const body = ModelsResponseSchema.parse(await res.json())
   if (!body.data) throw new Error("vLLM probe failed: no data field")
 
   return body.data.map((item) => ({

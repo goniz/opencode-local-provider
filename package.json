@@ -46,7 +46,8 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@opencode-ai/plugin": "^1.4.0",
-    "@opencode-ai/sdk": "^1.4.0"
+    "@opencode-ai/plugin": "^1.14.25",
+    "@opencode-ai/sdk": "^1.14.25",
+    "zod": "^4.3.6"
   }
 }
