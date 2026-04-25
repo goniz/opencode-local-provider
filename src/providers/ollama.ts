@@ -1,5 +1,22 @@
+import { z } from "zod"
 import type { LocalModel } from "../types"
 import type { ProviderImpl } from "./shared"
+
+const ModelsResponseSchema = z.object({
+  models: z
+    .array(
+      z.object({
+        name: z.string(),
+        model: z.string(),
+        context_length: z.number(),
+      }),
+    )
+    .optional(),
+})
+
+const ShowResponseSchema = z.object({
+  capabilities: z.array(z.string()).optional(),
+})
 
 async function detect(url: string) {
   try {
@@ -24,7 +41,7 @@ async function show(url: string, model: string) {
       signal: AbortSignal.timeout(3000),
     })
     if (!res.ok) return {}
-    return (await res.json()) as { capabilities?: string[] }
+    return ShowResponseSchema.parse(await res.json())
   } catch {
     return {}
   }
@@ -35,13 +52,7 @@ async function probe(url: string): Promise<LocalModel[]> {
     signal: AbortSignal.timeout(3000),
   })
   if (!res.ok) throw new Error(`Ollama probe failed: ${res.status}`)
-  const body = (await res.json()) as {
-    models?: Array<{
-      name: string
-      model: string
-      context_length: number
-    }>
-  }
+  const body = ModelsResponseSchema.parse(await res.json())
   if (!body.models) throw new Error("Ollama probe failed: no models field")
 
   return Promise.all(

@@ -1,32 +1,58 @@
+import { z } from "zod"
 import type { LocalModel } from "../types"
 import type { ProviderImpl } from "./shared"
 
-type ExoState = {
-  instances?: Record<
-    string,
-    {
-      MlxRingInstance?: {
-        shardAssignments?: {
-          modelId?: string
-          nodeToRunner?: Record<string, string>
-          runnerToShard?: Record<
-            string,
-            {
-              PipelineShardMetadata?: {
-                modelCard?: {
-                  contextLength?: number
-                  capabilities?: string[]
-                  vision?: unknown
-                }
-              }
-            }
-          >
-        }
-      }
-    }
-  >
-  runners?: Record<string, { RunnerReady?: object }>
-}
+const ExoStateSchema = z.object({
+  instances: z
+    .record(
+      z.string(),
+      z.object({
+        MlxRingInstance: z
+          .object({
+            shardAssignments: z
+              .object({
+                modelId: z.string().optional(),
+                nodeToRunner: z.record(z.string(), z.string()).optional(),
+                runnerToShard: z
+                  .record(
+                    z.string(),
+                    z.object({
+                      PipelineShardMetadata: z
+                        .object({
+                          modelCard: z
+                            .object({
+                              contextLength: z.number().optional(),
+                              capabilities: z.array(z.string()).optional(),
+                              vision: z.unknown().optional(),
+                            })
+                            .optional(),
+                        })
+                        .optional(),
+                    }),
+                  )
+                  .optional(),
+              })
+              .optional(),
+          })
+          .optional(),
+      }),
+    )
+    .optional(),
+  runners: z
+    .record(
+      z.string(),
+      z.object({
+        RunnerReady: z.unknown().optional(),
+      }),
+    )
+    .optional(),
+})
+
+const ModelsResponseSchema = z.object({
+  data: z
+    .array(z.object({ owned_by: z.string().optional() }))
+    .optional(),
+})
 
 async function detect(url: string) {
   try {
@@ -34,9 +60,14 @@ async function detect(url: string) {
       signal: AbortSignal.timeout(2000),
     })
     if (!res.ok) return false
-    const body = (await res.json()) as { data?: Array<{ owned_by?: string }> }
-    if (!Array.isArray(body.data)) return false
-    return body.data.length > 0 && body.data.every((item) => item.owned_by === "exo")
+    const parsed = ModelsResponseSchema.safeParse(await res.json())
+    if (!parsed.success) return false
+    const data = parsed.data.data
+    return (
+      data != null &&
+      data.length > 0 &&
+      data.every((item) => item.owned_by === "exo")
+    )
   } catch {
     return false
   }
@@ -48,7 +79,7 @@ async function probe(url: string): Promise<LocalModel[]> {
   })
   if (!res.ok) throw new Error(`Exo probe failed: ${res.status}`)
 
-  const body = (await res.json()) as ExoState
+  const body = ExoStateSchema.parse(await res.json())
   const instances = Object.values(body.instances ?? {})
   const runners = body.runners ?? {}
 
@@ -61,7 +92,8 @@ async function probe(url: string): Promise<LocalModel[]> {
     const runnerId = Object.values(assignments.nodeToRunner ?? {})[0]
     if (!runnerId || !("RunnerReady" in (runners[runnerId] ?? {}))) return []
 
-    const modelCard = assignments.runnerToShard?.[runnerId]?.PipelineShardMetadata?.modelCard
+    const modelCard =
+      assignments.runnerToShard?.[runnerId]?.PipelineShardMetadata?.modelCard
     return [
       {
         id: modelId,

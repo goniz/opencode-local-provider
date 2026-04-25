@@ -1,5 +1,25 @@
+import { z } from "zod"
 import type { LocalModel } from "../types"
 import type { ProviderImpl } from "./shared"
+
+const PropsSchema = z.object({
+  default_generation_settings: z
+    .object({ n_ctx: z.number().optional() })
+    .optional(),
+})
+
+const SlotsSchema = z.array(z.object({ n_ctx: z.number().optional() }))
+
+const ModelsResponseSchema = z.object({
+  data: z
+    .array(
+      z.object({
+        id: z.string(),
+        meta: z.record(z.string(), z.unknown()).nullable().optional(),
+      }),
+    )
+    .optional(),
+})
 
 async function runtimeContext(url: string) {
   try {
@@ -7,11 +27,9 @@ async function runtimeContext(url: string) {
       signal: AbortSignal.timeout(3000),
     })
     if (propsRes.ok) {
-      const props = (await propsRes.json()) as {
-        default_generation_settings?: { n_ctx?: number }
-      }
-      if (props.default_generation_settings?.n_ctx) {
-        return props.default_generation_settings.n_ctx
+      const parsed = PropsSchema.parse(await propsRes.json())
+      if (parsed.default_generation_settings?.n_ctx) {
+        return parsed.default_generation_settings.n_ctx
       }
     }
   } catch {}
@@ -21,8 +39,10 @@ async function runtimeContext(url: string) {
       signal: AbortSignal.timeout(3000),
     })
     if (slotsRes.ok) {
-      const slots = (await slotsRes.json()) as Array<{ n_ctx?: number }>
-      const loaded = slots.find((slot) => slot.n_ctx && slot.n_ctx > 0)?.n_ctx
+      const parsed = SlotsSchema.parse(await slotsRes.json())
+      const loaded = parsed.find(
+        (slot) => slot.n_ctx && slot.n_ctx > 0,
+      )?.n_ctx
       if (loaded) return loaded
     }
   } catch {}
@@ -48,16 +68,16 @@ async function probe(url: string): Promise<LocalModel[]> {
     signal: AbortSignal.timeout(3000),
   })
   if (!res.ok) throw new Error(`llama.cpp probe failed: ${res.status}`)
-  const body = (await res.json()) as {
-    data?: Array<{
-      id: string
-      meta?: Record<string, unknown> | null
-    }>
-  }
+  const body = ModelsResponseSchema.parse(await res.json())
 
   return (body.data ?? []).map((item) => ({
     id: item.id,
-    context: Number(loadedContext ?? item.meta?.n_ctx ?? item.meta?.n_ctx_train ?? 0),
+    context: Number(
+      loadedContext ??
+        item.meta?.n_ctx ??
+        item.meta?.n_ctx_train ??
+        0,
+    ),
     toolcall: false,
     vision: false,
   }))
