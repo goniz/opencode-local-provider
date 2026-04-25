@@ -33,7 +33,6 @@ async function probe(url: string): Promise<LocalModel[]> {
   return body.data
     .filter((item) => item.state === "loaded")
     .filter((item) => item.type === "llm" || item.type === "vlm")
-    .filter((item) => Boolean(item.loaded_context_length && item.loaded_context_length > 0))
     .map((item) => ({
       id: item.id,
       context: item.loaded_context_length ?? 0,
