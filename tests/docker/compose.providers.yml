@@ -88,6 +88,26 @@ services:
       retries: 60
       start_period: 60s
 
+  llamaswap:
+    image: ghcr.io/mostlygeek/llama-swap:cpu
+    environment:
+      LLAMASWAP_MODEL: lfm2.5-350m
+      LLAMASWAP_MODEL_REPO: LiquidAI/LFM2.5-350M-GGUF:Q8_0
+      LLAMASWAP_CONTEXT: 256
+    volumes:
+      - ./llamaswap-entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["bash", "/entrypoint.sh"]
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://127.0.0.1:8080/v1/models | grep -q 'lfm2.5-350m'",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 60
+      start_period: 30s
+
   exo:
     build:
       context: .
