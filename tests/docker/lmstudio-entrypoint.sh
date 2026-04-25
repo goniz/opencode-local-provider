@@ -4,7 +4,7 @@ set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
 
 apt-get update
-apt-get install -y --no-install-recommends bash ca-certificates curl libatomic1 libgomp1 procps tar util-linux-extra
+apt-get install -y --no-install-recommends bash ca-certificates curl libatomic1 libgomp1 procps tar util-linux-extra python3
 rm -rf /var/lib/apt/lists/*
 
 curl -fsSL https://lmstudio.ai/install.sh | bash -s -- --no-modify-path

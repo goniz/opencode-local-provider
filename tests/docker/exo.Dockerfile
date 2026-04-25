@@ -35,9 +35,9 @@ RUN git clone --depth 1 https://github.com/exo-explore/exo.git .
 ENV PATH="/root/.bun/bin:/root/.cargo/bin:/root/.local/bin:$PATH"
 RUN cd dashboard && bun install && bun run build && cd ..
 
-# Patch exo's manifest for Linux CPU-only builds.
-# Keep exo's custom MLX sources and only disable mflux on Linux, since mflux
-# is what pulls mlx[cuda13].
+# The only patch needed: ensure mflux is darwin-only to prevent it from
+# pulling mlx[cuda13] on Linux. Everything else (version pinning for the
+# mlx stack) is handled by uv pip install below.
 RUN python - <<'PY'
 import re
 from pathlib import Path
@@ -53,14 +53,23 @@ text = re.sub(
     flags=re.MULTILINE,
 )
 
+# Bump the mlx override version so uv pip install can pin it to 0.31.2
+# (the project's override-dependencies would otherwise block the bump).
+text = text.replace("mlx==0.31.1; sys_platform=='linux'", "mlx==0.31.2; sys_platform=='linux'")
+
 path.write_text(text)
 PY
 
-# Create venv at the same path we'll use in runtime and install using exo's
-# uv project resolution so the custom MLX sources are honored.
+# Create venv at the same path we'll use in runtime.
 ENV UV_PROJECT_ENVIRONMENT=/app/.venv
 RUN uv venv /app/.venv
-RUN uv sync --no-dev --python /app/.venv/bin/python
+
+# --extra cpu: installs mlx-cpu (provides libmlx.so on Linux).
+# The pip install pins the mlx stack to 0.31.2 — the latest CPU releases
+# where mlx-lm has GenerationBatch but doesn't yet need new_thread_local_stream.
+RUN uv sync --no-dev --extra cpu --python /app/.venv/bin/python && \
+    . /app/.venv/bin/activate && \
+    uv pip install mlx==0.31.2 mlx-cpu==0.31.2 mlx-lm==0.31.2
 RUN . /app/.venv/bin/activate && python -c "import mlx.core as mx; print(mx.__file__)"
 
 # Stage 2: Runtime
