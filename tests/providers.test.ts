@@ -49,6 +49,14 @@ const suites = [
     modelID: process.env.EXO_MODEL,
     expectedContext: 128000,
   },
+  {
+    kind: "llamaswap",
+    service: "llamaswap",
+    port: 8080,
+    url: () => providerURLs.llamaswap!,
+    modelID: process.env.LLAMASWAP_MODEL,
+    expectedContext: 256,
+  },
 ] as const
 
 const activeSuites = selectedKind ? suites.filter((item) => item.kind === selectedKind) : suites

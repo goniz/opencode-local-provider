@@ -1,0 +1,6 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": [
+    "/home/goniz/Work/experiments/opencode-local-provider"
+  ]
+}

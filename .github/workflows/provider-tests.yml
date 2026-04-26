@@ -19,6 +19,7 @@ jobs:
           - provider: llamacpp
           - provider: vllm
           - provider: exo
+          - provider: llamaswap
     steps:
       - uses: actions/checkout@v4
 

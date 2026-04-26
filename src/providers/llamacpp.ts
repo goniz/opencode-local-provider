@@ -21,7 +21,7 @@ const ModelsResponseSchema = z.object({
     .optional(),
 })
 
-async function runtimeContext(url: string) {
+export async function runtimeContext(url: string) {
   try {
     const propsRes = await fetch(url + "/props", {
       signal: AbortSignal.timeout(3000),

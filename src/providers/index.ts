@@ -2,6 +2,7 @@ import type { LocalProviderKind } from "../types"
 
 import exo from "./exo"
 import llamacpp from "./llamacpp"
+import llamaswap from "./llamaswap"
 import lmstudio from "./lmstudio"
 import ollama from "./ollama"
 import type { ProviderMap } from "./shared"
@@ -13,6 +14,7 @@ export const supportedProviders: ProviderMap = {
   llamacpp,
   vllm,
   exo,
+  llamaswap,
 }
 
 export const supportedProviderDefaultURLs: Record<LocalProviderKind, string> = {
@@ -21,6 +23,7 @@ export const supportedProviderDefaultURLs: Record<LocalProviderKind, string> = {
   llamacpp: "http://127.0.0.1:8080",
   vllm: "http://127.0.0.1:8000",
   exo: "http://127.0.0.1:52415",
+  llamaswap: "http://127.0.0.1:8080",
 }
 
 export const supportedProviderKinds = Object.keys(supportedProviders) as LocalProviderKind[]
