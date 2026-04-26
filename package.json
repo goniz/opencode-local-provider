@@ -1,6 +1,6 @@
 {
   "name": "opencode-local-provider",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "type": "module",
   "license": "MIT",
   "description": "OpenCode plugin that adds a 'local' provider with auto-detection for Ollama, LMStudio, llama.cpp, vLLM, Exo, and llama-swap",
