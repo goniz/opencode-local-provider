@@ -44,13 +44,17 @@ async function probe(url: string): Promise<LocalModel[]> {
   const body = StatusResponseSchema.parse(await res.json())
 
   return body.models
-    .filter((m) => m.loaded === true)
+    .filter((m) => {
+      if (m.loaded !== true) return false
+      const t = m.model_type ?? ""
+      return t === "llm" || t === "vlm"
+    })
     .map((m) => {
       const modelType = m.model_type ?? ""
       return {
         id: m.id,
         context: m.max_context_window ?? 0,
-        toolcall: modelType === "llm" || modelType === "vlm",
+        toolcall: true,
         vision: modelType === "vlm",
       }
     })

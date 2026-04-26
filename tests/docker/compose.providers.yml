@@ -123,7 +123,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl -fsS http://127.0.0.1:8000/v1/models | grep -q 'qwen3-0.6b'",
+          "curl -fsS http://127.0.0.1:8000/v1/models/status | python3 -c \"import json,sys; data=json.load(sys.stdin); assert any(m.get('id')=='qwen3-0.6b' and m.get('loaded') for m in data.get('models',[]))\"",
         ]
       interval: 10s
       timeout: 10s
