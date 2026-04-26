@@ -15,16 +15,13 @@ export async function detect(url: string): Promise<LocalProviderKind | null> {
 
 export async function probe(url: string, kind?: LocalProviderKind) {
   const root = rootURL(url)
+  const detected = await detect(root)
 
-  if (kind) {
-    return {
-      kind,
-      models: await supportedProviders[kind].probe(root),
-    }
-  }
-
-  const detected = await detect(url)
   if (!detected) throw new Error(`No supported local provider detected at: ${url}`)
+
+  if (kind && detected !== kind) {
+    throw new Error(`Expected ${kind} at ${url} but detected ${detected}`)
+  }
 
   return {
     kind: detected,
