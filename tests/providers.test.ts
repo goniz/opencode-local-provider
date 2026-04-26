@@ -57,6 +57,14 @@ const suites = [
     modelID: process.env.LLAMASWAP_MODEL,
     expectedContext: 256,
   },
+  {
+    kind: "omlx",
+    service: "omlx",
+    port: 8000,
+    url: () => providerURLs.omlx!,
+    modelID: process.env.OMLX_MODEL_ID,
+    expectedContext: 32768,
+  },
 ] as const
 
 const activeSuites = selectedKind ? suites.filter((item) => item.kind === selectedKind) : suites
