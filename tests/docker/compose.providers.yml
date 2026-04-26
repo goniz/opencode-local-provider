@@ -108,6 +108,28 @@ services:
       retries: 60
       start_period: 30s
 
+  omlx:
+    build:
+      context: .
+      dockerfile: omlx.Dockerfile
+    environment:
+      OMLX_MODEL: mlx-community/Qwen3-0.6B-4bit
+      OMLX_MODEL_ID: qwen3-0.6b
+      OMLX_PORT: 8000
+    volumes:
+      - ./omlx-entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["bash", "/entrypoint.sh"]
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://127.0.0.1:8000/v1/models | grep -q 'qwen3-0.6b'",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 60
+      start_period: 120s
+
   exo:
     build:
       context: .
