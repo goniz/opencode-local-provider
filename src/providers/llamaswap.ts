@@ -1,6 +1,7 @@
 import { z } from "zod"
 import type { LocalModel } from "../types"
 import type { ProviderImpl } from "./shared"
+import { runtimeContext } from "./llamacpp"
 
 const ModelsResponseSchema = z.object({
   data: z
@@ -12,14 +13,6 @@ const ModelsResponseSchema = z.object({
     )
     .optional(),
 })
-
-const PropsSchema = z.object({
-  default_generation_settings: z
-    .object({ n_ctx: z.number().optional() })
-    .optional(),
-})
-
-const SlotsSchema = z.array(z.object({ n_ctx: z.number().optional() }))
 
 async function detect(url: string) {
   try {
@@ -39,37 +32,6 @@ async function detect(url: string) {
   }
 }
 
-async function upstreamContext(url: string, modelId: string) {
-  // llama-swap proxies the underlying server under /upstream/:model_id.
-  // For llama.cpp backends we can read n_ctx from /props or /slots.
-  try {
-    const propsRes = await fetch(`${url}/upstream/${modelId}/props`, {
-      signal: AbortSignal.timeout(3000),
-    })
-    if (propsRes.ok) {
-      const parsed = PropsSchema.parse(await propsRes.json())
-      if (parsed.default_generation_settings?.n_ctx) {
-        return parsed.default_generation_settings.n_ctx
-      }
-    }
-  } catch {}
-
-  try {
-    const slotsRes = await fetch(`${url}/upstream/${modelId}/slots`, {
-      signal: AbortSignal.timeout(3000),
-    })
-    if (slotsRes.ok) {
-      const parsed = SlotsSchema.parse(await slotsRes.json())
-      const loaded = parsed.find(
-        (slot) => slot.n_ctx && slot.n_ctx > 0,
-      )?.n_ctx
-      if (loaded) return loaded
-    }
-  } catch {}
-
-  return 0
-}
-
 async function probe(url: string): Promise<LocalModel[]> {
   const res = await fetch(url + "/v1/models", {
     signal: AbortSignal.timeout(3000),
@@ -80,7 +42,9 @@ async function probe(url: string): Promise<LocalModel[]> {
 
   return Promise.all(
     body.data.map(async (item) => {
-      const context = await upstreamContext(url, item.id)
+      // Query the underlying server through llama-swap's upstream proxy.
+      const context =
+        (await runtimeContext(`${url}/upstream/${item.id}`)) ?? 0
 
       return {
         id: item.id,
