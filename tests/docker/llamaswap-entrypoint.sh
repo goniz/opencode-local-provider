@@ -5,8 +5,6 @@ cat > /app/config.yaml <<EOF
 models:
   ${LLAMASWAP_MODEL}:
     cmd: llama-server -hf "${LLAMASWAP_MODEL_REPO}" --port \${PORT} --ctx-size "${LLAMASWAP_CONTEXT}"
-    metadata:
-      n_ctx: ${LLAMASWAP_CONTEXT}
 
 hooks:
   on_startup:

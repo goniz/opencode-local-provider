@@ -8,7 +8,6 @@ const ModelsResponseSchema = z.object({
       z.object({
         id: z.string(),
         owned_by: z.string().optional(),
-        meta: z.record(z.string(), z.unknown()).optional(),
       }),
     )
     .optional(),
@@ -68,7 +67,7 @@ async function upstreamContext(url: string, modelId: string) {
     }
   } catch {}
 
-  return null
+  return 0
 }
 
 async function probe(url: string): Promise<LocalModel[]> {
@@ -81,14 +80,11 @@ async function probe(url: string): Promise<LocalModel[]> {
 
   return Promise.all(
     body.data.map(async (item) => {
-      const metaCtx = item.meta?.llamaswap?.n_ctx
-      const upstreamCtx = metaCtx
-        ? null
-        : await upstreamContext(url, item.id)
+      const context = await upstreamContext(url, item.id)
 
       return {
         id: item.id,
-        context: Number(metaCtx ?? upstreamCtx ?? 0),
+        context,
         toolcall: false,
         vision: false,
       }
