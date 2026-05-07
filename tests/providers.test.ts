@@ -67,6 +67,14 @@ const suites = [
     modelID: process.env.OMLX_MODEL_ID,
     expectedContext: 32768,
   },
+  {
+    kind: "mlxvlm",
+    service: "mlx-vlm",
+    port: 8080,
+    url: () => providerURLs.mlxvlm!,
+    modelID: process.env.MLX_VLM_MODEL,
+    expectedContext: 32768,
+  },
 ] as const
 
 const activeSuites = selectedKind ? suites.filter((item) => item.kind === selectedKind) : suites
@@ -80,7 +88,7 @@ beforeAll(() => {
   for (const item of activeSuites) {
     providerURLs[item.kind] = compose.serviceURL(item.service, item.port)
   }
-}, 600_000)
+}, 900_000)
 
 afterAll(() => {
   compose?.down()

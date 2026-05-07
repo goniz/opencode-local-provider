@@ -1,4 +1,4 @@
-export const KINDS = ["ollama", "lmstudio", "llamacpp", "vllm", "exo", "llamaswap", "omlx"] as const
+export const KINDS = ["ollama", "lmstudio", "llamacpp", "vllm", "exo", "llamaswap", "omlx", "mlxvlm"] as const
 
 export type LocalProviderKind = (typeof KINDS)[number]
 

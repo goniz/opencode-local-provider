@@ -21,6 +21,7 @@ jobs:
           - provider: exo
           - provider: llamaswap
           - provider: omlx
+          - provider: mlxvlm
     steps:
       - uses: actions/checkout@v4
 
