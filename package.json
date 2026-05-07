@@ -3,7 +3,7 @@
   "version": "0.1.7",
   "type": "module",
   "license": "MIT",
-  "description": "OpenCode plugin that adds a 'local' provider with auto-detection for Ollama, LMStudio, llama.cpp, vLLM, Exo, and llama-swap",
+  "description": "OpenCode plugin that adds a 'local' provider with auto-detection for Ollama, LMStudio, llama.cpp, vLLM, Exo, llama-swap, oMLX, and MLX-VLM",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/goniz/opencode-local-provider.git"
@@ -30,6 +30,8 @@
     "llama.cpp",
     "vllm",
     "exo",
+    "omlx",
+    "mlx-vlm",
     "local"
   ],
   "scripts": {
