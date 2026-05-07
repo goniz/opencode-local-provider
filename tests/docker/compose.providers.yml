@@ -130,6 +130,27 @@ services:
       retries: 60
       start_period: 120s
 
+  mlx-vlm:
+    build:
+      context: .
+      dockerfile: mlx-vlm.Dockerfile
+    environment:
+      MLX_VLM_MODEL: mlx-community/Qwen2-VL-2B-Instruct-4bit
+      MLX_VLM_PORT: 8080
+    volumes:
+      - ./mlx-vlm-entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["bash", "/entrypoint.sh"]
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://127.0.0.1:8080/health | python3 -c \"import json,sys; data=json.load(sys.stdin); assert data.get('loaded_model')=='mlx-community/Qwen2-VL-2B-Instruct-4bit'\"",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 60
+      start_period: 120s
+
   exo:
     build:
       context: .
