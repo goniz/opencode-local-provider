@@ -5,7 +5,7 @@ import type { ProviderImpl } from "./shared"
 const HealthSchema = z.object({
   status: z.string().optional(),
   loaded_model: z.string().nullable().optional(),
-  loaded_context_size: z.number().optional(),
+  loaded_context_size: z.number().nullable().optional(),
   loaded_tool_parser: z.string().nullable().optional(),
 })
 
