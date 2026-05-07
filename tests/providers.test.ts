@@ -88,7 +88,7 @@ beforeAll(() => {
   for (const item of activeSuites) {
     providerURLs[item.kind] = compose.serviceURL(item.service, item.port)
   }
-}, 600_000)
+}, 900_000)
 
 afterAll(() => {
   compose?.down()
