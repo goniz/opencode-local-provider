@@ -14,8 +14,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python -m venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
 
+# Install CPU-only torch wheels so pip does not pull Linux CUDA packages.
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir --upgrade 'mlx-vlm>=0.5.0' mlx-cpu torch torchvision \
+    && pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple --upgrade torch torchvision \
+    && pip install --no-cache-dir --upgrade 'mlx-vlm>=0.5.0' mlx-cpu \
     && python -c "import mlx.core as mx; print(f'mlx: {mx.__file__}')"
 
 WORKDIR /app
