@@ -24,13 +24,28 @@ export function run(command: string, args: string[], env: Record<string, string>
   )
 }
 
+function runStreaming(command: string, args: string[], env: Record<string, string> = {}) {
+  const result = spawnSync(command, args, {
+    cwd: root,
+    env: {
+      ...process.env,
+      ...env,
+    },
+    stdio: "inherit",
+  })
+
+  if (result.status === 0) return
+
+  throw new Error(`Command failed: ${command} ${args.join(" ")}`)
+}
+
 export class ComposeEnvironment {
   readonly env = {
     COMPOSE_PROJECT_NAME: `provider-tests-${randomUUID().slice(0, 8)}`,
   }
 
   up(services?: string[]) {
-    run(
+    runStreaming(
       "docker",
       ["compose", "-f", composeFile, "up", "-d", "--wait", ...(services?.length ? services : [])],
       this.env,

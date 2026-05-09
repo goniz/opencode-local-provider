@@ -21,10 +21,13 @@ jobs:
           - provider: lmstudio
           - provider: llamacpp
           - provider: vllm
-          - provider: exo
           - provider: llamaswap
+          - provider: exo
+            compose_service: exo
           - provider: omlx
+            compose_service: omlx
           - provider: mlxvlm
+            compose_service: mlx-vlm
     steps:
       - uses: actions/checkout@v6
 
@@ -42,6 +45,10 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        if: matrix.compose_service
+        run: docker compose -f tests/docker/compose.providers.yml build "${{ matrix.compose_service }}"
 
       - name: Run ${{ matrix.provider }} suite
         run: PROVIDER_SUITE="${{ matrix.provider }}" bun test ./tests/providers.test.ts
