@@ -1,5 +1,6 @@
 import type { Plugin, ProviderHookContext } from "@opencode-ai/plugin"
 import type { Provider } from "@opencode-ai/sdk/v2"
+import type { Model } from "@opencode-ai/sdk/v2"
 import pkg from "../package.json" with { type: "json" }
 
 import {
@@ -66,6 +67,16 @@ export const LocalProviderPlugin: Plugin = async (ctx) => {
         npm: provider.npm ?? OPENAI_COMPATIBLE_NPM,
         options,
       }
+
+      const models = await probeModels(
+        {
+          id: LOCAL_PROVIDER_ID,
+          options,
+          models: (provider as Provider).models ?? ({} as Record<string, Model>),
+        } as unknown as Provider,
+        {} as ProviderHookContext,
+      )
+      ;(cfg.provider[LOCAL_PROVIDER_ID] as Record<string, unknown>).models = models
     },
     auth: {
       provider: LOCAL_PROVIDER_ID,
@@ -125,10 +136,6 @@ export const LocalProviderPlugin: Plugin = async (ctx) => {
           },
         },
       ],
-    },
-    provider: {
-      id: LOCAL_PROVIDER_ID,
-      models: probeModels,
     },
   }
 }

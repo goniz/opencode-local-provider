@@ -52,7 +52,7 @@ services:
       start_period: 30s
 
   opencode:
-    image: ghcr.io/anomalyco/opencode:1.14.30
+    image: ghcr.io/anomalyco/opencode:latest
     depends_on:
       llamacpp:
         condition: service_healthy
