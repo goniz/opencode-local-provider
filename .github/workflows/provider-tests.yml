@@ -8,6 +8,10 @@ on:
 
 jobs:
   provider-tests:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+      packages: write
     name: ${{ matrix.provider }} tests
     runs-on: ubuntu-latest
     strategy:
@@ -15,21 +19,46 @@ jobs:
       matrix:
         include:
           - provider: ollama
+            image_pull: true
           - provider: lmstudio
+            image_pull: true
           - provider: llamacpp
+            image_pull: true
           - provider: vllm
-          - provider: exo
+            image_pull: true
           - provider: llamaswap
+            image_pull: true
+          - provider: exo
+            image_build: true
           - provider: omlx
+            image_build: true
           - provider: mlxvlm
+            image_build: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
       - run: bun install --frozen-lockfile
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull Docker image
+        if: matrix.image_pull
+        run: docker compose -f tests/docker/compose.providers.yml pull "${{ matrix.provider }}"
+
+      - name: Build Docker image
+        if: matrix.image_build
+        run: docker compose -f tests/docker/compose.providers.yml build "${{ matrix.provider }}"
 
       - name: Run ${{ matrix.provider }} suite
         run: PROVIDER_SUITE="${{ matrix.provider }}" bun test ./tests/providers.test.ts
@@ -38,7 +67,7 @@ jobs:
     name: opencode tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: oven-sh/setup-bun@v2
         with:

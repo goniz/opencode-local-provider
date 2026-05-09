@@ -65,11 +65,11 @@ ENV UV_PROJECT_ENVIRONMENT=/app/.venv
 RUN uv venv /app/.venv
 
 # --extra cpu: installs mlx-cpu (provides libmlx.so on Linux).
-# The pip install pins the mlx stack to 0.31.2 — the latest CPU releases
-# where mlx-lm has GenerationBatch but doesn't yet need new_thread_local_stream.
+# The pip install pins mlx/mlx-cpu to 0.31.2 — the latest CPU releases.
+# mlx-lm is left unpinned so uv sync uses the fork specified in exo's pyproject.toml.
 RUN uv sync --no-dev --extra cpu --python /app/.venv/bin/python && \
     . /app/.venv/bin/activate && \
-    uv pip install mlx==0.31.2 mlx-cpu==0.31.2 mlx-lm==0.31.2
+    uv pip install mlx==0.31.2 mlx-cpu==0.31.2
 RUN . /app/.venv/bin/activate && python -c "import mlx.core as mx; print(mx.__file__)"
 
 # Stage 2: Runtime

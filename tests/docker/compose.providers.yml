@@ -112,6 +112,10 @@ services:
     build:
       context: .
       dockerfile: omlx.Dockerfile
+      cache_from:
+        - type=registry,ref=ghcr.io/goniz/opencode-local-provider/provider-tests-omlx:buildcache
+      cache_to:
+        - type=registry,ref=ghcr.io/goniz/opencode-local-provider/provider-tests-omlx:buildcache,mode=min
     environment:
       OMLX_MODEL: mlx-community/Qwen3-0.6B-4bit
       OMLX_MODEL_ID: qwen3-0.6b
@@ -130,10 +134,14 @@ services:
       retries: 60
       start_period: 120s
 
-  mlx-vlm:
+  mlxvlm:
     build:
       context: .
       dockerfile: mlx-vlm.Dockerfile
+      cache_from:
+        - type=registry,ref=ghcr.io/goniz/opencode-local-provider/provider-tests-mlxvlm:buildcache
+      cache_to:
+        - type=registry,ref=ghcr.io/goniz/opencode-local-provider/provider-tests-mlxvlm:buildcache,mode=min
     environment:
       MLX_VLM_MODEL: mlx-community/Qwen2-VL-2B-Instruct-4bit
       MLX_VLM_PORT: 8080
@@ -155,6 +163,10 @@ services:
     build:
       context: .
       dockerfile: exo.Dockerfile
+      cache_from:
+        - type=registry,ref=ghcr.io/goniz/opencode-local-provider/provider-tests-exo:buildcache
+      cache_to:
+        - type=registry,ref=ghcr.io/goniz/opencode-local-provider/provider-tests-exo:buildcache,mode=min
     environment:
       EXO_MODEL: LiquidAI/LFM2.5-350M-MLX-4bit
       EXO_PORT: 52415
