@@ -23,6 +23,62 @@ function validID(value: string) {
   return /^[a-z0-9][a-z0-9-_]*$/.test(value)
 }
 
+function modalities(model: Model) {
+  return {
+    input: ([
+      model.capabilities.input.text && "text",
+      model.capabilities.input.audio && "audio",
+      model.capabilities.input.image && "image",
+      model.capabilities.input.video && "video",
+      model.capabilities.input.pdf && "pdf",
+    ].filter(Boolean) as Array<"text" | "audio" | "image" | "video" | "pdf">),
+    output: ([
+      model.capabilities.output.text && "text",
+      model.capabilities.output.audio && "audio",
+      model.capabilities.output.image && "image",
+      model.capabilities.output.video && "video",
+      model.capabilities.output.pdf && "pdf",
+    ].filter(Boolean) as Array<"text" | "audio" | "image" | "video" | "pdf">),
+  }
+}
+
+function configModel(model: Model) {
+  return {
+    id: model.api.id,
+    name: model.name,
+    family: model.family || undefined,
+    release_date: model.release_date || undefined,
+    attachment: model.capabilities.attachment,
+    reasoning: model.capabilities.reasoning,
+    temperature: model.capabilities.temperature,
+    tool_call: model.capabilities.toolcall,
+    ...(model.capabilities.interleaved ? { interleaved: model.capabilities.interleaved } : {}),
+    cost: {
+      input: model.cost.input,
+      output: model.cost.output,
+      cache_read: model.cost.cache.read,
+      cache_write: model.cost.cache.write,
+    },
+    limit: {
+      context: model.limit.context,
+      ...(model.limit.input ? { input: model.limit.input } : {}),
+      output: model.limit.output,
+    },
+    modalities: modalities(model),
+    options: model.options,
+    headers: model.headers,
+    provider: {
+      npm: model.api.npm,
+      api: model.api.url,
+    },
+    variants: model.variants,
+  }
+}
+
+function configModels(models: Record<string, Model>) {
+  return Object.fromEntries(Object.entries(models).map(([id, model]) => [id, configModel(model)]))
+}
+
 async function probeModels(provider: Provider, ctx: ProviderHookContext) {
   const list = getProviderTargets(provider)
   if (!Object.keys(list).length) return {}
@@ -76,7 +132,7 @@ export const LocalProviderPlugin: Plugin = async (ctx) => {
         } as unknown as Provider,
         {} as ProviderHookContext,
       )
-      ;(cfg.provider[LOCAL_PROVIDER_ID] as Record<string, unknown>).models = models
+      ;(cfg.provider[LOCAL_PROVIDER_ID] as Record<string, unknown>).models = configModels(models)
     },
     auth: {
       provider: LOCAL_PROVIDER_ID,
