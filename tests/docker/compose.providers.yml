@@ -134,7 +134,7 @@ services:
       retries: 60
       start_period: 120s
 
-  mlx-vlm:
+  mlxvlm:
     build:
       context: .
       dockerfile: mlx-vlm.Dockerfile

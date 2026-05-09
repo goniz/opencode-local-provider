@@ -24,4 +24,4 @@ fi
 docker buildx use "$builder"
 docker buildx inspect --bootstrap >/dev/null
 
-docker compose -f tests/docker/compose.providers.yml build omlx mlx-vlm exo
+docker compose -f tests/docker/compose.providers.yml build omlx mlxvlm exo

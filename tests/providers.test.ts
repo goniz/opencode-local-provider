@@ -69,7 +69,7 @@ const suites = [
   },
   {
     kind: "mlxvlm",
-    service: "mlx-vlm",
+    service: "mlxvlm",
     port: 8080,
     url: () => providerURLs.mlxvlm!,
     modelID: process.env.MLX_VLM_MODEL,

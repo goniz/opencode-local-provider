@@ -18,16 +18,21 @@ jobs:
       matrix:
         include:
           - provider: ollama
+            image_pull: true
           - provider: lmstudio
+            image_pull: true
           - provider: llamacpp
+            image_pull: true
           - provider: vllm
+            image_pull: true
           - provider: llamaswap
+            image_pull: true
           - provider: exo
-            compose_service: exo
+            image_build: true
           - provider: omlx
-            compose_service: omlx
+            image_build: true
           - provider: mlxvlm
-            compose_service: mlx-vlm
+            image_build: true
     steps:
       - uses: actions/checkout@v6
 
@@ -46,9 +51,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Pull Docker image
+        if: matrix.image_pull
+        run: docker compose -f tests/docker/compose.providers.yml pull "${{ matrix.provider }}"
+
       - name: Build Docker image
-        if: matrix.compose_service
-        run: docker compose -f tests/docker/compose.providers.yml build "${{ matrix.compose_service }}"
+        if: matrix.image_build
+        run: docker compose -f tests/docker/compose.providers.yml build "${{ matrix.provider }}"
 
       - name: Run ${{ matrix.provider }} suite
         run: PROVIDER_SUITE="${{ matrix.provider }}" bun test ./tests/providers.test.ts
