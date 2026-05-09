@@ -57,7 +57,7 @@ const ModelsResponseSchema = z.object({
 async function detect(url: string) {
   try {
     const res = await fetch(url + "/v1/models", {
-      signal: AbortSignal.timeout(2000),
+      signal: AbortSignal.timeout(1000),
     })
     if (!res.ok) return false
     const parsed = ModelsResponseSchema.safeParse(await res.json())
@@ -75,7 +75,7 @@ async function detect(url: string) {
 
 async function probe(url: string): Promise<LocalModel[]> {
   const res = await fetch(url + "/state", {
-    signal: AbortSignal.timeout(3000),
+    signal: AbortSignal.timeout(1000),
   })
   if (!res.ok) throw new Error(`Exo probe failed: ${res.status}`)
 

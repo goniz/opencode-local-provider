@@ -19,7 +19,7 @@ async function detect(url: string) {
     // llama-swap exposes /v1/models for all configured models regardless of load state.
     // We check owned_by to distinguish it from other OpenAI-compatible proxies.
     const res = await fetch(url + "/v1/models", {
-      signal: AbortSignal.timeout(2000),
+      signal: AbortSignal.timeout(1000),
     })
     if (!res.ok) return false
     const parsed = ModelsResponseSchema.safeParse(await res.json())
@@ -34,7 +34,7 @@ async function detect(url: string) {
 
 async function probe(url: string): Promise<LocalModel[]> {
   const res = await fetch(url + "/v1/models", {
-    signal: AbortSignal.timeout(3000),
+    signal: AbortSignal.timeout(1000),
   })
   if (!res.ok) throw new Error(`llama-swap probe failed: ${res.status}`)
   const body = ModelsResponseSchema.parse(await res.json())

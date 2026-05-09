@@ -26,7 +26,7 @@ const StatusResponseSchema = z.object({
 async function detect(url: string) {
   try {
     const res = await fetch(url + "/health", {
-      signal: AbortSignal.timeout(2000),
+      signal: AbortSignal.timeout(1000),
     })
     if (!res.ok) return false
     const parsed = HealthSchema.safeParse(await res.json())
@@ -38,7 +38,7 @@ async function detect(url: string) {
 
 async function probe(url: string): Promise<LocalModel[]> {
   const res = await fetch(url + "/v1/models/status", {
-    signal: AbortSignal.timeout(3000),
+    signal: AbortSignal.timeout(1000),
   })
   if (!res.ok) throw new Error(`oMLX probe failed: ${res.status}`)
   const body = StatusResponseSchema.parse(await res.json())

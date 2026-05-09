@@ -24,7 +24,7 @@ const ModelsResponseSchema = z.object({
 export async function runtimeContext(url: string) {
   try {
     const propsRes = await fetch(url + "/props", {
-      signal: AbortSignal.timeout(3000),
+      signal: AbortSignal.timeout(1000),
     })
     if (propsRes.ok) {
       const parsed = PropsSchema.parse(await propsRes.json())
@@ -36,7 +36,7 @@ export async function runtimeContext(url: string) {
 
   try {
     const slotsRes = await fetch(url + "/slots", {
-      signal: AbortSignal.timeout(3000),
+      signal: AbortSignal.timeout(1000),
     })
     if (slotsRes.ok) {
       const parsed = SlotsSchema.parse(await slotsRes.json())
@@ -53,7 +53,7 @@ export async function runtimeContext(url: string) {
 async function detect(url: string) {
   try {
     const res = await fetch(url, {
-      signal: AbortSignal.timeout(2000),
+      signal: AbortSignal.timeout(1000),
     })
     if (!res.ok) return false
     return res.headers.get("Server")?.toLowerCase() === "llama.cpp"
@@ -65,7 +65,7 @@ async function detect(url: string) {
 async function probe(url: string): Promise<LocalModel[]> {
   const loadedContext = await runtimeContext(url)
   const res = await fetch(url + "/v1/models", {
-    signal: AbortSignal.timeout(3000),
+    signal: AbortSignal.timeout(1000),
   })
   if (!res.ok) throw new Error(`llama.cpp probe failed: ${res.status}`)
   const body = ModelsResponseSchema.parse(await res.json())

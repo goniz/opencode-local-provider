@@ -17,7 +17,7 @@ const ModelsResponseSchema = z.object({
 async function detect(url: string) {
   try {
     const res = await fetch(url + "/v1/models", {
-      signal: AbortSignal.timeout(2000),
+      signal: AbortSignal.timeout(1000),
     })
     if (!res.ok) return false
     if (res.headers.get("Server")?.toLowerCase() !== "uvicorn") return false
@@ -33,7 +33,7 @@ async function detect(url: string) {
 
 async function probe(url: string): Promise<LocalModel[]> {
   const res = await fetch(url + "/v1/models", {
-    signal: AbortSignal.timeout(3000),
+    signal: AbortSignal.timeout(1000),
   })
   if (!res.ok) throw new Error(`vLLM probe failed: ${res.status}`)
   const body = ModelsResponseSchema.parse(await res.json())
