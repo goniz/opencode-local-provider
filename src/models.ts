@@ -7,20 +7,17 @@ import { baseURL } from "./url"
 type Modality = "text" | "audio" | "image" | "video" | "pdf"
 
 type ConfigModel = {
-  id?: string
   name?: string
   family?: string
   release_date?: string
   attachment?: boolean
   reasoning?: boolean
   temperature?: boolean
-  tool_call?: boolean
   interleaved?: true | { field: "reasoning_content" | "reasoning_details" }
   options?: Record<string, unknown>
   headers?: Record<string, string>
   provider?: {
     npm?: string
-    api?: string
   }
   variants?: Record<string, Record<string, unknown>>
 }
@@ -49,6 +46,7 @@ function modalities(model: LocalModel): { input: Modality[]; output: Modality[] 
 }
 
 function item(providerID: string, target: string, url: string, model: LocalModel, prev?: Model): Model {
+  const attach = model.vision || prev?.capabilities.attachment || false
   const limit = limits(model.context)
   const next = id(target, model.id)
 
@@ -65,7 +63,7 @@ function item(providerID: string, target: string, url: string, model: LocalModel
     capabilities: {
       temperature: prev?.capabilities.temperature ?? true,
       reasoning: prev?.capabilities.reasoning ?? false,
-      attachment: model.vision,
+      attachment: attach,
       toolcall: model.toolcall,
       input: {
         text: true,
@@ -104,12 +102,13 @@ function item(providerID: string, target: string, url: string, model: LocalModel
 }
 
 function configItem(target: string, url: string, model: LocalModel, prev?: ConfigModel) {
+  const attach = model.vision || prev?.attachment || false
   return {
     id: model.id,
     name: prev?.name ?? name(target, model.id),
     family: prev?.family || undefined,
     release_date: prev?.release_date || undefined,
-    attachment: model.vision,
+    attachment: attach,
     reasoning: prev?.reasoning ?? false,
     temperature: prev?.temperature ?? true,
     tool_call: model.toolcall,

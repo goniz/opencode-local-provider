@@ -65,15 +65,10 @@ export const LocalProviderPlugin: Plugin = async (ctx) => {
         name: provider.name ?? LOCAL_PROVIDER_NAME,
         npm: provider.npm ?? OPENAI_COMPATIBLE_NPM,
         options,
-      }
-
-      const models = await probeModels({
-        options,
-        models: (provider as Provider).models,
-      })
-      cfg.provider[LOCAL_PROVIDER_ID] = {
-        ...(cfg.provider[LOCAL_PROVIDER_ID] as Record<string, unknown>),
-        models,
+        models: await probeModels({
+          options,
+          models: (provider as Provider).models,
+        }),
       }
     },
     auth: {
