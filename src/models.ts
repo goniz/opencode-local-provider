@@ -4,6 +4,27 @@ import { DEFAULT_CONTEXT, DEFAULT_OUTPUT, OPENAI_COMPATIBLE_NPM } from "./consta
 import type { LocalModel } from "./types"
 import { baseURL } from "./url"
 
+type Modality = "text" | "audio" | "image" | "video" | "pdf"
+
+type ConfigModel = {
+  id?: string
+  name?: string
+  family?: string
+  release_date?: string
+  attachment?: boolean
+  reasoning?: boolean
+  temperature?: boolean
+  tool_call?: boolean
+  interleaved?: true | { field: "reasoning_content" | "reasoning_details" }
+  options?: Record<string, unknown>
+  headers?: Record<string, string>
+  provider?: {
+    npm?: string
+    api?: string
+  }
+  variants?: Record<string, Record<string, unknown>>
+}
+
 function limits(input: number) {
   const context = input > 0 ? input : DEFAULT_CONTEXT
   return {
@@ -18,6 +39,13 @@ function id(target: string, model: string) {
 
 function name(target: string, model: string) {
   return `${model} (${target})`
+}
+
+function modalities(model: LocalModel): { input: Modality[]; output: Modality[] } {
+  return {
+    input: ["text", ...(model.vision ? (["image"] as const) : [])],
+    output: ["text"],
+  }
 }
 
 function item(providerID: string, target: string, url: string, model: LocalModel, prev?: Model): Model {
@@ -75,11 +103,52 @@ function item(providerID: string, target: string, url: string, model: LocalModel
   }
 }
 
+function configItem(target: string, url: string, model: LocalModel, prev?: ConfigModel) {
+  return {
+    id: model.id,
+    name: prev?.name ?? name(target, model.id),
+    family: prev?.family || undefined,
+    release_date: prev?.release_date || undefined,
+    attachment: model.vision,
+    reasoning: prev?.reasoning ?? false,
+    temperature: prev?.temperature ?? true,
+    tool_call: model.toolcall,
+    ...(prev?.interleaved ? { interleaved: prev.interleaved } : {}),
+    cost: {
+      input: 0,
+      output: 0,
+      cache_read: 0,
+      cache_write: 0,
+    },
+    limit: limits(model.context),
+    modalities: modalities(model),
+    options: {
+      ...prev?.options,
+      target,
+    },
+    headers: prev?.headers ?? {},
+    provider: {
+      npm: prev?.provider?.npm ?? OPENAI_COMPATIBLE_NPM,
+      api: baseURL(url),
+    },
+    variants: prev?.variants ?? {},
+  }
+}
+
 export function build(providerID: string, target: string, url: string, list: LocalModel[], prev: Record<string, Model>) {
   return Object.fromEntries(
     list.map((model) => {
       const key = id(target, model.id)
       return [key, item(providerID, target, url, model, prev[key])]
+    }),
+  )
+}
+
+export function buildConfig(target: string, url: string, list: LocalModel[], prev: Record<string, ConfigModel>) {
+  return Object.fromEntries(
+    list.map((model) => {
+      const key = id(target, model.id)
+      return [key, configItem(target, url, model, prev[key])]
     }),
   )
 }
