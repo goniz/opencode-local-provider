@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test"
 
-import { getConfiguredTargets, getProviderTargets } from "../src/config"
-import { supportedProviderDefaultURLs } from "../src/providers"
-import { baseURL } from "../src/url"
+import { getConfiguredTargets, getProviderTargets } from "../../src/config"
+import { supportedProviderDefaultURLs } from "../../src/providers"
+import { baseURL } from "../../src/url"
 
 test("includes supported default targets by default", () => {
   const targets = getProviderTargets()

@@ -1,7 +1,7 @@
 import { describe, expect, mock, test } from "bun:test"
 
-import { runningModels } from "../src/providers/llamaswap"
-import { probe } from "../src/probe"
+import { runningModels } from "../../src/providers/llamaswap"
+import { probe } from "../../src/probe"
 
 describe("llama-swap provider", () => {
   test("only probes upstream for loaded models", async () => {
