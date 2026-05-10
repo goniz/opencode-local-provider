@@ -14,6 +14,34 @@ const ModelsResponseSchema = z.object({
     .optional(),
 })
 
+const RunningResponseSchema = z.object({
+  running: z
+    .array(
+      z.object({
+        model: z.string(),
+        state: z.string().optional(),
+      }),
+    )
+    .optional(),
+})
+
+export async function runningModels(url: string) {
+  try {
+    const res = await fetch(url + "/running", {
+      signal: AbortSignal.timeout(1000),
+    })
+    if (!res.ok) return new Set<string>()
+    const body = RunningResponseSchema.parse(await res.json())
+    return new Set(
+      (body.running ?? [])
+        .filter((item) => !item.state || item.state === "ready")
+        .map((item) => item.model),
+    )
+  } catch {
+    return new Set<string>()
+  }
+}
+
 async function detect(url: string) {
   try {
     // llama-swap exposes /v1/models for all configured models regardless of load state.
@@ -39,12 +67,11 @@ async function probe(url: string): Promise<LocalModel[]> {
   if (!res.ok) throw new Error(`llama-swap probe failed: ${res.status}`)
   const body = ModelsResponseSchema.parse(await res.json())
   if (!body.data) throw new Error("llama-swap probe failed: no data field")
+  const loadedModels = await runningModels(url)
 
   return Promise.all(
-    body.data.map(async (item) => {
-      // Query the underlying server through llama-swap's upstream proxy.
-      const context =
-        (await runtimeContext(`${url}/upstream/${item.id}`)) ?? 0
+    body.data.filter((item) => loadedModels.has(item.id)).map(async (item) => {
+      const context = (await runtimeContext(`${url}/upstream/${item.id}`)) ?? 0
 
       return {
         id: item.id,
