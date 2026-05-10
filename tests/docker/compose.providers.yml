@@ -102,12 +102,12 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl -fsS http://127.0.0.1:8080/v1/models | grep -q 'lfm2.5-350m'",
+          "curl -fsS http://127.0.0.1:8080/running | grep -q 'lfm2.5-350m' && curl -fsS http://127.0.0.1:8080/running | grep -q '\"ready\"'",
         ]
       interval: 10s
       timeout: 10s
       retries: 60
-      start_period: 30s
+      start_period: 60s
 
   omlx:
     build:
