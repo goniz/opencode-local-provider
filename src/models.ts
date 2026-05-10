@@ -19,7 +19,6 @@ type ConfigModel = {
   provider?: {
     npm?: string
   }
-  variants?: Record<string, Record<string, unknown>>
 }
 
 function limits(input: number) {
@@ -109,9 +108,9 @@ function configItem(target: string, url: string, model: LocalModel, prev?: Confi
     family: prev?.family || undefined,
     release_date: prev?.release_date || undefined,
     attachment: attach,
-    reasoning: prev?.reasoning ?? false,
+    ...(prev?.reasoning ? { reasoning: true } : {}),
     temperature: prev?.temperature ?? true,
-    tool_call: model.toolcall,
+    ...(model.toolcall ? { tool_call: true } : {}),
     ...(prev?.interleaved ? { interleaved: prev.interleaved } : {}),
     cost: {
       input: 0,
@@ -130,7 +129,6 @@ function configItem(target: string, url: string, model: LocalModel, prev?: Confi
       npm: prev?.provider?.npm ?? OPENAI_COMPATIBLE_NPM,
       api: baseURL(url),
     },
-    variants: prev?.variants ?? {},
   }
 }
 
