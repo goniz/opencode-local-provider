@@ -1,6 +1,6 @@
 {
   "name": "opencode-local-provider",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "type": "module",
   "license": "MIT",
   "description": "OpenCode plugin that adds a 'local' provider with auto-detection for Ollama, LMStudio, llama.cpp, vLLM, Exo, llama-swap, oMLX, and MLX-VLM",
@@ -48,8 +48,8 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@opencode-ai/plugin": "^1.14.40",
-    "@opencode-ai/sdk": "^1.14.40",
+    "@opencode-ai/plugin": "^1.14.46",
+    "@opencode-ai/sdk": "^1.14.46",
     "zod": "^4.4.3"
   }
 }
