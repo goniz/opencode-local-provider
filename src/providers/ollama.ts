@@ -21,7 +21,7 @@ const ShowResponseSchema = z.object({
 async function detect(url: string) {
   try {
     const res = await fetch(url, {
-      signal: AbortSignal.timeout(2000),
+      signal: AbortSignal.timeout(1000),
     })
     if (!res.ok) return false
     return (await res.text()) === "Ollama is running"
@@ -38,7 +38,7 @@ async function show(url: string, model: string) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ model }),
-      signal: AbortSignal.timeout(3000),
+      signal: AbortSignal.timeout(1000),
     })
     if (!res.ok) return {}
     return ShowResponseSchema.parse(await res.json())
@@ -49,7 +49,7 @@ async function show(url: string, model: string) {
 
 async function probe(url: string): Promise<LocalModel[]> {
   const res = await fetch(url + "/api/ps", {
-    signal: AbortSignal.timeout(3000),
+    signal: AbortSignal.timeout(1000),
   })
   if (!res.ok) throw new Error(`Ollama probe failed: ${res.status}`)
   const body = ModelsResponseSchema.parse(await res.json())

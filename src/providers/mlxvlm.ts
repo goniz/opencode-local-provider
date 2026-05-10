@@ -9,7 +9,7 @@ const HealthSchema = z.object({
   loaded_tool_parser: z.string().nullable().optional(),
 })
 
-async function runtimeHealth(url: string, timeout = 3000) {
+async function runtimeHealth(url: string, timeout = 1000) {
   const res = await fetch(url + "/health", {
     signal: AbortSignal.timeout(timeout),
   })
@@ -24,7 +24,7 @@ async function runtimeHealth(url: string, timeout = 3000) {
 async function detect(url: string) {
   try {
     const res = await fetch(url + "/health", {
-      signal: AbortSignal.timeout(2000),
+      signal: AbortSignal.timeout(1000),
     })
 
     if (!res.ok) {

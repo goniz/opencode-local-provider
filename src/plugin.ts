@@ -1,4 +1,4 @@
-import type { Plugin, ProviderHookContext } from "@opencode-ai/plugin"
+import type { Plugin } from "@opencode-ai/plugin"
 import type { Provider } from "@opencode-ai/sdk/v2"
 import pkg from "../package.json" with { type: "json" }
 
@@ -13,7 +13,7 @@ import {
   getProviderTargets,
   saveProviderTarget,
 } from "./config"
-import { build } from "./models"
+import { buildConfig } from "./models"
 import { supportedProviderKinds } from "./providers"
 import { detect, probe } from "./probe"
 import { trimURL } from "./url"
@@ -22,7 +22,7 @@ function validID(value: string) {
   return /^[a-z0-9][a-z0-9-_]*$/.test(value)
 }
 
-async function probeModels(provider: Provider, ctx: ProviderHookContext) {
+async function probeModels(provider?: Pick<Provider, "options" | "models">) {
   const list = getProviderTargets(provider)
   if (!Object.keys(list).length) return {}
 
@@ -30,7 +30,7 @@ async function probeModels(provider: Provider, ctx: ProviderHookContext) {
     Object.entries(list).map(async ([id, item]) => {
       try {
         const found = await probe(item.url, item.kind)
-        return build(provider.id, id, item.url, found.models, provider.models)
+        return buildConfig(id, item.url, found.models, (provider?.models ?? {}) as Record<string, never>)
       } catch {
         return {}
       }
@@ -65,6 +65,10 @@ export const LocalProviderPlugin: Plugin = async (ctx) => {
         name: provider.name ?? LOCAL_PROVIDER_NAME,
         npm: provider.npm ?? OPENAI_COMPATIBLE_NPM,
         options,
+        models: await probeModels({
+          options,
+          models: (provider as Provider).models,
+        }),
       }
     },
     auth: {
@@ -125,10 +129,6 @@ export const LocalProviderPlugin: Plugin = async (ctx) => {
           },
         },
       ],
-    },
-    provider: {
-      id: LOCAL_PROVIDER_ID,
-      models: probeModels,
     },
   }
 }
