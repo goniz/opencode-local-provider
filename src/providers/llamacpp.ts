@@ -136,6 +136,18 @@ async function probeModelProps(url: string, id: string): Promise<LocalModel> {
   }
 }
 
+async function detect(url: string) {
+  try {
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(1000),
+    })
+    if (!res.ok) return false
+    return res.headers.get("Server")?.toLowerCase() === "llama.cpp"
+  } catch {
+    return false
+  }
+}
+
 async function probe(url: string): Promise<LocalModel[]> {
   const res = await fetch(url + "/v1/models", {
     signal: AbortSignal.timeout(10_000),
