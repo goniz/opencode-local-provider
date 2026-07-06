@@ -16,6 +16,9 @@ const ModelsResponseSchema = z.object({
       z.object({
         id: z.string(),
         meta: z.record(z.string(), z.unknown()).nullable().optional(),
+        status: z.object({
+          args: z.array(z.string()).optional(),
+        }).nullable().optional(),
       }),
     )
     .optional(),
@@ -50,6 +53,14 @@ export async function runtimeContext(url: string) {
   return null
 }
 
+function extractContextFromStatus(status: any): number | null {
+  if (!status?.args || !Array.isArray(status.args)) return null
+  const idx = status.args.indexOf('--ctx-size')
+  if (idx === -1 || status.args.length <= idx + 1) return null
+  const val = parseInt(status.args[idx + 1], 10)
+  return isNaN(val) ? null : val
+}
+
 async function detect(url: string) {
   try {
     const res = await fetch(url, {
@@ -68,15 +79,17 @@ async function probe(url: string): Promise<LocalModel[]> {
     signal: AbortSignal.timeout(1000),
   })
   if (!res.ok) throw new Error(`llama.cpp probe failed: ${res.status}`)
+
   const body = ModelsResponseSchema.parse(await res.json())
 
   return (body.data ?? []).map((item) => ({
     id: item.id,
     context: Number(
       loadedContext ??
-        item.meta?.n_ctx ??
-        item.meta?.n_ctx_train ??
-        0,
+      item.meta?.n_ctx ??
+      item.meta?.n_ctx_train ??
+      extractContextFromStatus(item.status) ??
+      0,
     ),
     toolcall: false,
     vision: false,
